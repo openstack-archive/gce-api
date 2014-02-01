@@ -1,0 +1,19 @@
+[DEFAULT]
+api_paste_config = /etc/gceapi/api-paste.ini
+
+network_api = neutron
+logging_context_format_string = %(asctime)s.%(msecs)03d %(levelname)s %(name)s [%(request_id)s %(user_name)s %(project_name)s] %(instance)s%(message)s
+my_ip = 127.0.0.1
+auth_strategy = keystone
+debug = True
+verbose = True
+
+[keystone_authtoken]
+signing_dir = /var/cache/gceapi
+admin_password = password
+admin_user = nova
+admin_tenant_name = service
+auth_host = 127.0.0.1
+
+[database]
+connection = mysql://root:password@127.0.0.1/gceapi?charset=utf8

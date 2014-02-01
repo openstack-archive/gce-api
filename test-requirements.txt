@@ -1,0 +1,14 @@
+coverage>=3.6
+discover
+feedparser
+fixtures>=0.3.14
+hacking>=0.8.0,<0.9
+mock>=1.0
+MySQL-python
+oslo.sphinx
+psycopg2
+pylint==0.25.2
+python-subunit>=0.0.18
+sphinx>=1.1.2,<1.2
+testrepository>=0.0.17
+testtools>=0.9.34
