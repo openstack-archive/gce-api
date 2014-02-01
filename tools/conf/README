@@ -1,0 +1,20 @@
+This generate_sample.sh tool is used to generate etc/gceapi/gceapi.conf.sample
+
+Run it from the top-level working directory i.e.
+
+  $> ./tools/conf/generate_sample.sh
+
+Watch out for warnings about modules like libvirt, qpid and zmq not
+being found - these warnings are significant because they result
+in options not appearing in the generated config file.
+
+
+The analyze_opts.py tool is used to find options which appear in
+/etc/gceapi/gceapi.conf but not in etc/gceapi/gceapi.conf.sample
+This helps identify options in the gceapi.conf file which are not used by gceapi.
+The tool also identifies any options which are set to the default value.
+
+Run it from the top-level working directory i.e.
+
+  $> ./tools/conf/analyze_opts.py
+
