@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Approved+1: Feodor Tersin <ftersin@cloudscaling.com>
+Code-Review+2: Feodor Tersin <ftersin@cloudscaling.com>
+Code-Review+1: Andrey Pavlov <apavlov@cloudscaling.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 04 Feb 2014 15:29:39 +0000
+Reviewed-on: https://review.openstack.org/70804
+Project: stackforge/gce-api
+Branch: refs/heads/master
