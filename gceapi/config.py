@@ -31,5 +31,4 @@ def parse_args(argv, default_config_files=None):
                             sqlite_db='gceapi.sqlite')
     cfg.CONF(argv[1:],
              project='gceapi',
-             version=version.version_string(),
              default_config_files=default_config_files)
