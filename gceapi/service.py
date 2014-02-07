@@ -50,6 +50,12 @@ service_opts = [
     cfg.StrOpt('network_api',
                default="neutron",
                help='Name of network API. neutron(quantum) or nova'),
+    cfg.StrOpt('keystone_gce_url',
+               default='http://127.0.0.1:5000/v2.0',
+               help='Keystone URL'),
+    cfg.StrOpt('public_network',
+               default='public',
+               help='name of public network'),
     ]
 
 CONF = cfg.CONF

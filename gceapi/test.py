@@ -39,9 +39,6 @@ from gceapi import paths
 
 
 test_opts = [
-    cfg.StrOpt('sqlite_clean_db',
-               default='clean.sqlite',
-               help='File name of clean sqlite db'),
     cfg.StrOpt('network_api',
                default="neutron",
                help='Name of network API. neutron(quantum) or nova'),

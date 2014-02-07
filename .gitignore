@@ -1,0 +1,7 @@
+**.pyc
+*.egg-info
+.venv
+.tox
+build/*
+.project
+.pydevproject

@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo.config import cfg
-
 from gceapi.api import addresses
 from gceapi.api import discovery
 from gceapi.api import disks
@@ -32,28 +30,6 @@ from gceapi.api import zones
 from gceapi.openstack.common import log as logging
 from gceapi import wsgi
 from gceapi import wsgi_ext as openstack_api
-
-gce_opts = [
-        cfg.StrOpt('keystone_gce_url',
-            default='http://127.0.0.1:5000/v2.0',
-            help='Keystone URL'),
-        cfg.IntOpt('gce_port',
-            default=8777,
-            help='the port of the gce api server'),
-        cfg.StrOpt('gce_scheme',
-            default='http',
-            help='the protocol to use when connecting to the gce api '
-                 'server (http, https)'),
-        cfg.StrOpt('gce_path',
-            default='/compute/v1beta15/projects',
-            help='the path prefix used to call the gce api server'),
-        cfg.StrOpt('public_network',
-            default='public',
-            help='name of public network'),
-        ]
-
-CONF = cfg.CONF
-CONF.register_opts(gce_opts)
 
 LOG = logging.getLogger(__name__)
 
