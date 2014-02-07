@@ -82,11 +82,11 @@ mkdir -p $AUTH_CACHE_DIR
 chown $SUDO_USER $AUTH_CACHE_DIR
 rm -f $AUTH_CACHE_DIR/*
 
-#recreate database
-echo Setuping database
-bin/gceapi-db-setup deb
-
 #install it
 echo Installing package
 python setup.py install
 rm -rf build gce_api.egg-info
+
+#recreate database
+echo Setuping database
+bin/gceapi-db-setup deb
