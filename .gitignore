@@ -1,0 +1,8 @@
+**.pyc
+*.egg-info
+.venv
+.tox
+.testrepository
+build/*
+.project
+.pydevproject
