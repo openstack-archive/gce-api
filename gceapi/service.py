@@ -47,9 +47,6 @@ service_opts = [
     cfg.IntOpt('gce_listen_port',
                default=8777,
                help='port for gce api to listen'),
-    cfg.StrOpt('network_api',
-               default="neutron",
-               help='Name of network API. neutron(quantum) or nova'),
     ]
 
 CONF = cfg.CONF

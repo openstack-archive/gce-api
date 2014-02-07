@@ -34,8 +34,8 @@ auth_opts = [
                 default=False,
                 help='whether to use per-user rate limiting for the api.'),
     cfg.StrOpt('auth_strategy',
-               default='noauth',
-               help='The strategy to use for auth: noauth or keystone.'),
+               default='keystone',
+               help='The strategy to use for auth: keystone only for now.'),
     cfg.BoolOpt('use_forwarded_for',
                 default=False,
                 help='Treat X-Forwarded-For as the canonical remote address. '

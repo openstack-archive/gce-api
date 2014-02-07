@@ -33,29 +33,23 @@ from gceapi.openstack.common import log as logging
 from gceapi import wsgi
 from gceapi import wsgi_ext as openstack_api
 
+LOG = logging.getLogger(__name__)
+
+
 gce_opts = [
-        cfg.StrOpt('keystone_gce_url',
-            default='http://127.0.0.1:5000/v2.0',
-            help='Keystone URL'),
-        cfg.IntOpt('gce_port',
-            default=8777,
-            help='the port of the gce api server'),
-        cfg.StrOpt('gce_scheme',
-            default='http',
-            help='the protocol to use when connecting to the gce api '
-                 'server (http, https)'),
-        cfg.StrOpt('gce_path',
-            default='/compute/v1beta15/projects',
-            help='the path prefix used to call the gce api server'),
-        cfg.StrOpt('public_network',
-            default='public',
-            help='name of public network'),
-        ]
+    cfg.StrOpt('network_api',
+               default="neutron",
+               help='Name of network API. neutron(quantum) or nova'),
+    cfg.StrOpt('keystone_gce_url',
+               default='http://127.0.0.1:5000/v2.0',
+               help='Keystone URL'),
+    cfg.StrOpt('public_network',
+               default='public',
+               help='name of public network'),
+    ]
 
 CONF = cfg.CONF
 CONF.register_opts(gce_opts)
-
-LOG = logging.getLogger(__name__)
 
 
 class APIRouter(wsgi.Router):
