@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 #
 #    Copyright 2013 Cloudscaling Group, Inc
 #
@@ -237,7 +237,8 @@ echo "Verified connectivity to MySQL."
 
 echo "Creating 'gceapi' database."
 cat << EOF | mysql -u root ${MYSQL_ROOT_PW_ARG}
-CREATE DATABASE IF NOT EXISTS gceapi;
+DROP DATABASE IF EXISTS gceapi;
+CREATE DATABASE IF NOT EXISTS gceapi DEFAULT CHARACTER SET utf8;
 GRANT ALL ON gceapi.* TO 'gceapi'@'localhost' IDENTIFIED BY '${MYSQL_GCEAPI_PW}';
 GRANT ALL ON gceapi.* TO 'gceapi'@'%' IDENTIFIED BY '${MYSQL_GCEAPI_PW}';
 flush privileges;
