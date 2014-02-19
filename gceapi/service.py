@@ -45,7 +45,7 @@ service_opts = [
                default="0.0.0.0",
                help='IP address for gce api to listen'),
     cfg.IntOpt('gce_listen_port',
-               default=8777,
+               default=8787,
                help='port for gce api to listen'),
     ]
 

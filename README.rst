@@ -6,6 +6,7 @@ Support of GCE-API for OpenStack.
 Installation
 =====
 
+Make sure that python-pip package is installed.
 Run "install.sh". You can check and correct default options in this file.
 Check for keystone options in api-paste.ini and other options in gceapi.conf in /etc/gceapi
 Run it - "gce-api".
@@ -14,12 +15,14 @@ Usage
 =====
 
 Download gcloud from Google and install it.
+https://developers.google.com/compute/docs/gcutil/
+
 There are two ways for using it:
 
 1. Run authorization command:
-	python google-cloud-sdk/platform/gcutil/gcutil --authorization_uri_base=http://localhost:8777 auth
+	python google-cloud-sdk/platform/gcutil/gcutil --authorization_uri_base=http://localhost:8787 auth
   and next any other commands:
-	python google-cloud-sdk/platform/gcutil/gcutil --api_host=http://localhost:8777/ --authorization_uri_base=http://localhost:8777 --project demo listzones
+	python google-cloud-sdk/platform/gcutil/gcutil --api_host=http://localhost:8787/ --authorization_uri_base=http://localhost:8787 --project demo listzones
 	
 2. You have to have Google account
   You can activate an already-authorized account with
@@ -27,9 +30,9 @@ There are two ways for using it:
   or authorize a new account with
 	gcloud auth login
   Next you must authorize in Openstack by running authorization command:
-	gcutil --authorization_uri_base=http://localhost:8777 auth
+	gcutil --authorization_uri_base=http://localhost:8787 auth
   and next you can run any other commands: 
-	gcutil --api_host=http://localhost:8777/ --authorization_uri_base=http://localhost:8777 --project demo listzones
+	gcutil --api_host=http://localhost:8787/ --authorization_uri_base=http://localhost:8787 --project demo listzones
 
 Make gcutil always use your GCE API endpoint using '--api_host' flag and your GCE API
 authorization endpoint using '--authorization_uri_base' flag. Also you can store this

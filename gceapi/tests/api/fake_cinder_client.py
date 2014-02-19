@@ -100,7 +100,7 @@ FAKE_DISKS = [utils.FakeObject({
     "availability_zone": "nova",
     "created_at": "2013-08-14T18:55:57.000000",
     "display_description": "Persistent boot disk created from "
-        "http://127.0.0.1:8777/compute/v1beta15/projects/admin"
+        "http://127.0.0.1:8787/compute/v1beta15/projects/admin"
         "/global/images/fake-image-1.",
     "volume_type": "None",
     "metadata": {},
