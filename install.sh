@@ -160,9 +160,9 @@ function iniset() {
     local section=$2
     local option=$3
     local value=$4
-    if ! grep -q "^\[$section\]" "$file"; then
+    if ! sudo grep -q "^\[$section\]" "$file"; then
         # Add section at the end
-        sudo echo -e "\n[$section]" >>"$file"
+        sudo bash -c "echo -e \"\n[$section]\" >>\"$file\""
     fi
     if ! ini_has_option "$file" "$section" "$option"; then
         # Add it
@@ -192,11 +192,13 @@ add_role $SERVICE_USERID $SERVICE_TENANT $ADMIN_ROLE $SERVICE_USERNAME
 
 #create log dir
 echo Creating log dir
-install -d $LOG_DIR
+sudo install -d $LOG_DIR
 
+CONF_FILE=$CONF_DIR/gceapi.conf
+APIPASTE_FILE=$CONF_DIR/api-paste.ini
 #copy conf files (do not override it)
 echo Creating configs
-mkdir -p /etc/gceapi > /dev/null
+sudo mkdir -p /etc/gceapi > /dev/null
 if [ ! -s $CONF_FILE ]; then
     sudo cp etc/gceapi/gceapi.conf $CONF_FILE
 fi
@@ -206,12 +208,10 @@ fi
 
 AUTH_HOST=${OS_AUTH_URL#*//}
 AUTH_HOST=${AUTH_HOST%:*}
-CONF_FILE=$CONF_DIR/gceapi.conf
-APIPASTE_FILE=$CONF_DIR/api-paste.ini
 AUTH_CACHE_DIR=${AUTH_CACHE_DIR:-/var/cache/gceapi}
-AUTH_PORT=${OS_AUTH_URL#*//}
-AUTH_PORT=${AUTH_PORT#*:}
-AUTH_PORT=${AUTH_PORT%/*}
+AUTH_PORT=`keystone catalog|grep -A 9 identity|grep adminURL|awk '{print $4}'`
+AUTH_PORT=${AUTH_PORT##*:}
+AUTH_PORT=${AUTH_PORT%%/*}
 AUTH_PROTO=${OS_AUTH_URL%%:*}
 
 #update default config with some values
@@ -244,4 +244,3 @@ sudo rm -rf build gce_api.egg-info
 #recreate database
 echo Setuping database
 sudo bin/gceapi-db-setup deb
-	
