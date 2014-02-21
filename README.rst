@@ -1,14 +1,19 @@
 OpenStack Nova GCE API README
 -----------------------------
 
-Support of GCE-API for OpenStack. 
+Support of GCE-API for OpenStack.
 
 Installation
 =====
 
 Make sure that python-pip package is installed.
-Run "install.sh". You can check and correct default options in this file.
-Check for keystone options in api-paste.ini and other options in gceapi.conf in /etc/gceapi
+
+Check and correct default options in the begining of 'install.sh' file.
+
+Run "install.sh".
+
+Check for other options in /etc/gceapi/gceapi.conf if needed.
+
 Run it - "gce-api".
 
 Usage
@@ -23,7 +28,7 @@ There are two ways for using it:
 	python google-cloud-sdk/platform/gcutil/gcutil --authorization_uri_base=http://localhost:8787 auth
   and next any other commands:
 	python google-cloud-sdk/platform/gcutil/gcutil --api_host=http://localhost:8787/ --authorization_uri_base=http://localhost:8787 --project demo listzones
-	
+
 2. You have to have Google account
   You can activate an already-authorized account with
 	gcloud config set account <account>
