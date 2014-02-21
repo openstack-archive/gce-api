@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Approved+1: Alexandre Levine <alevine@cloudscaling.com>
+Code-Review+2: Alexandre Levine <alevine@cloudscaling.com>
+Submitted-by: Jenkins
+Submitted-at: Fri, 21 Feb 2014 13:18:21 +0000
+Reviewed-on: https://review.openstack.org/75342
+Project: stackforge/gce-api
+Branch: refs/heads/master
