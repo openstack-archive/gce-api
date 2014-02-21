@@ -7,8 +7,13 @@ Installation
 =====
 
 Make sure that python-pip package is installed.
-Run "install.sh". You can check and correct default options in this file.
-Check for keystone options in api-paste.ini and other options in gceapi.conf in /etc/gceapi
+Check and correct default options in 'install.sh' file.
+Run "install.sh".
+Make sure that service user is present in system. Create it if needed -
+	keystone user-create --name gceapi --tenant service --pass password
+And assign role to this user -
+	keystone user-role-add --user gceapi --role admin --tenant service
+Check other for options in /etc/gceapi/gceapi.conf if needed.
 Run it - "gce-api".
 
 Usage
@@ -23,7 +28,7 @@ There are two ways for using it:
 	python google-cloud-sdk/platform/gcutil/gcutil --authorization_uri_base=http://localhost:8787 auth
   and next any other commands:
 	python google-cloud-sdk/platform/gcutil/gcutil --api_host=http://localhost:8787/ --authorization_uri_base=http://localhost:8787 --project demo listzones
-	
+
 2. You have to have Google account
   You can activate an already-authorized account with
 	gcloud config set account <account>

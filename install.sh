@@ -5,18 +5,6 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-LOG_DIR=/var/log/gceapi
-CONF_DIR=/etc/gceapi
-CONF_FILE=$CONF_DIR/gceapi.conf
-APIPASTE_FILE=$CONF_DIR/api-paste.ini
-AUTH_CACHE_DIR=${AUTH_CACHE_DIR:-/var/cache/gceapi}
-AUTH_HOST=127.0.0.1
-CONNECTION="mysql://root:password@127.0.0.1/gceapi?charset=utf8"
-SIGNING_DIR=/var/cache/gceapi
-KEYSTONE_URL="http://$AUTH_HOST:5000/v2.0"
-
-
-
 # Determines if the given option is present in the INI file
 # ini_has_option config-file section option
 function ini_has_option() {
@@ -51,6 +39,16 @@ $option = $value
 }
 
 
+LOG_DIR=/var/log/gceapi
+CONF_DIR=/etc/gceapi
+CONF_FILE=$CONF_DIR/gceapi.conf
+APIPASTE_FILE=$CONF_DIR/api-paste.ini
+AUTH_CACHE_DIR=${AUTH_CACHE_DIR:-/var/cache/gceapi}
+AUTH_HOST=127.0.0.1
+CONNECTION="mysql://root:password@127.0.0.1/gceapi?charset=utf8"
+SIGNING_DIR=/var/cache/gceapi
+KEYSTONE_URL="http://$AUTH_HOST:5000/v2.0"
+
 #create log dir
 echo Creating log dir
 install -d $LOG_DIR
@@ -64,17 +62,21 @@ fi
 if [ ! -s $APIPASTE_FILE ]; then
     cp etc/gceapi/api-paste.ini $APIPASTE_FILE
 fi
+
 #update default config with some values
 iniset $CONF_FILE DEFAULT api_paste_config $APIPASTE_FILE
 iniset $CONF_FILE DEFAULT logging_context_format_string "%(asctime)s.%(msecs)03d %(levelname)s %(name)s [%(request_id)s %(user_name)s %(project_name)s] %(instance)s%(message)s"
 iniset $CONF_FILE DEFAULT verbose True
 iniset $CONF_FILE DEFAULT keystone_gce_url "$KEYSTONE_URL"
 iniset $CONF_FILE database connection "$CONNECTION"
+
 iniset $CONF_FILE keystone_authtoken signing_dir $SIGNING_DIR
 iniset $CONF_FILE keystone_authtoken auth_host "$AUTH_HOST"
-iniset $CONF_FILE keystone_authtoken admin_password password
-iniset $CONF_FILE keystone_authtoken admin_user nova
+iniset $CONF_FILE keystone_authtoken admin_password admin
+iniset $CONF_FILE keystone_authtoken admin_user password
 iniset $CONF_FILE keystone_authtoken admin_tenant_name service
+iniset $CONF_FILE keystone_authtoken auth_protocol http
+iniset $CONF_FILE keystone_authtoken auth_port 35357
 
 #init cache dir
 echo Creating signing dir
