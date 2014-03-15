@@ -23,4 +23,3 @@ sqlalchemy-migrate>=0.8.2
 stevedore>=0.14
 suds>=0.4
 WebOb>=1.2.3
-websockify>=0.5.1,<0.6

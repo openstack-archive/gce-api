@@ -12,9 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo.config import cfg
+
 from gceapi.api import base_api
 from gceapi.api import scopes
 from gceapi import exception
+
+CONF = cfg.CONF
 
 
 class API(base_api.API):
@@ -24,7 +28,12 @@ class API(base_api.API):
     """
 
     KIND = "region"
-    _REGIONS = ["nova"]
+    _REGIONS = []
+
+    def __init__(self, *args, **kwargs):
+        super(API, self).__init__(*args, **kwargs)
+        regions = CONF.get("region_list").split(",")
+        self._REGIONS = [r.strip() for r in regions]
 
     def _get_type(self):
         return self.KIND

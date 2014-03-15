@@ -12,11 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo.config import cfg
+
 from gceapi.api import base_api
 from gceapi.api import clients
 from gceapi.api import operation_util
 from gceapi.api import utils
 from gceapi import exception
+
+CONF = cfg.CONF
 
 
 class API(base_api.API):
@@ -43,18 +47,30 @@ class API(base_api.API):
                                      for l in nova_limits.absolute)
 
         cinder_client = clients.cinder(context)
-        result["cinder_quotas"] = utils.to_dict(
-            cinder_client.quotas.get(project_id, usage=True))
+        try:
+            result["cinder_quotas"] = utils.to_dict(
+                cinder_client.quotas.get(project_id, usage=True))
+        except TypeError:
+            # NOTE(apavlov): cinderclient of version 1.0.6 and below
+            # has no usage parameter
+            result["cinder_quotas"] = dict([("limit", x)
+                for x in utils.to_dict(cinder_client.quotas.get(project_id))])
 
-        neutron_client = clients.neutron(context)
-        result["neutron_quota"] = (
-            neutron_client.show_quota(project_id)["quota"])
-        result["neutron_quota"]["network_used"] = len(neutron_client
-            .list_networks(tenant_id=project_id)["networks"])
-        result["neutron_quota"]["floatingip_used"] = len(neutron_client
-            .list_floatingips(tenant_id=project_id)["floatingips"])
-        result["neutron_quota"]["security_group_used"] = len(neutron_client
-            .list_security_groups(tenant_id=project_id)["security_groups"])
+        net_api = CONF.get("network_api")
+        if net_api is None or ("quantum" in net_api
+                               or "neutron" in net_api):
+            neutron_client = clients.neutron(context)
+            result["neutron_quota"] = (
+                neutron_client.show_quota(project_id)["quota"])
+            result["neutron_quota"]["network_used"] = len(neutron_client
+                .list_networks(tenant_id=project_id)["networks"])
+            result["neutron_quota"]["floatingip_used"] = len(neutron_client
+                .list_floatingips(tenant_id=project_id)["floatingips"])
+            result["neutron_quota"]["security_group_used"] = len(neutron_client
+                .list_security_groups(tenant_id=project_id)["security_groups"])
+        else:
+            result["neutron_quota"] = {}
+
         return result
 
     def get_items(self, context, scope=None):

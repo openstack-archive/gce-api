@@ -31,7 +31,7 @@ FLAGS = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
-INTERNAL_GCUTIL_PROJECTS = ["debian-cloud", "centos-cloud", "google"]
+INTERNAL_GCUTIL_PROJECTS = ["debian-cloud", "centos-cloud", "suse-cloud", "rhel-cloud", "google"]
 
 
 class OAuthFault(openstack_wsgi.Fault):
