@@ -23,7 +23,7 @@ EXPECTED_ZONES = [{
         "/zones/nova",
     "name": "nova",
     "status": "UP",
-    "region": "nova",
+    "region": "RegionOne",
 }]
 
 

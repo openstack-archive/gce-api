@@ -61,8 +61,8 @@ command_opt = cfg.SubCommandOpt('command',
 def main():
     CONF.register_cli_opt(command_opt)
     try:
-        default_config_files = cfg.find_config_files('gceapi', 'gceapi-engine')
-        CONF(sys.argv[1:], project='gceapi', prog='gceapi-manage',
+        default_config_files = cfg.find_config_files('gceapi')
+        CONF(sys.argv[1:], project='gceapi', prog='gce-api-manage',
              version=version.version_info.version_string(),
              default_config_files=default_config_files)
         log.setup("gceapi")

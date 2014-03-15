@@ -19,6 +19,7 @@ from gceapi.api import clients
 from gceapi.api import operation_util
 from gceapi.api import utils
 from gceapi import exception
+from gceapi.openstack.common.gettextutils import _
 
 
 class API(base_api.API):
@@ -35,7 +36,11 @@ class API(base_api.API):
 
     def get_item(self, context, name, scope=None):
         client = clients.nova(context)
-        network = client.networks.find(label=name)
+        try:
+            network = client.networks.find(label=name)
+        except clients.novaclient.exceptions.NotFound:
+            msg = _("Network resource '%s' could not be found.") % name
+            raise exception.NotFound(msg)
         gce_network = self._get_db_item_by_id(context, network.id)
         return self._prepare_network(utils.to_dict(network), gce_network)
 
@@ -72,7 +77,7 @@ class API(base_api.API):
         network = None
         try:
             network = self.get_item(context, name)
-        except clients.novaclient.exceptions.NotFound:
+        except exception.NotFound:
             pass
         if network is not None:
             raise exception.DuplicateVlan

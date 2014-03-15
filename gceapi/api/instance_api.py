@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import random
 import string
 
 from gceapi.api import base_api
@@ -256,18 +257,6 @@ class API(base_api.API):
         flavor_id = machine_type_api.API().get_item(
             context, flavor_name, scope)["id"]
 
-        try:
-            metadatas = body['metadata']['items']
-        except KeyError:
-            metadatas = []
-        instance_metadata = dict([(x['key'], x['value']) for x in metadatas])
-
-        ssh_keys = instance_metadata.pop('sshKeys', None)
-        if ssh_keys is not None:
-            key_name = ssh_keys.split('\n')[0].split(":")[0]
-        else:
-            key_name = project_api.API().get_gce_user_keypair_name(context)
-
         disks = body.get('disks', [])
         disks.sort(None, lambda x: x.get("boot", False), True)
         bdm = dict()
@@ -304,14 +293,34 @@ class API(base_api.API):
                 groups_names.add(sg["name"])
         groups_names = list(groups_names)
 
-        operation_util.start_operation(context, self._get_add_item_progress)
-        instance = client.servers.create(name, None, flavor_id,
-            meta=instance_metadata, min_count=1, max_count=1,
-            security_groups=groups_names, key_name=key_name,
-            availability_zone=scope.get_name(), block_device_mapping=bdm,
-            nics=nics)
-        if not acs:
-            operation_util.set_item_id(context, instance.id)
+        try:
+            metadatas = body['metadata']['items']
+        except KeyError:
+            metadatas = []
+        instance_metadata = dict([(x['key'], x['value']) for x in metadatas])
+
+        ssh_keys = instance_metadata.pop('sshKeys', None)
+        if ssh_keys is not None:
+            key = ssh_keys.split('\n')[0].split(":")
+            key_name = key[0] + "-" + str(random.randint(10000, 99999))
+            key_data = key[1]
+            client.keypairs.create(key_name, key_data)
+        else:
+            key_name = project_api.API().get_gce_user_keypair_name(context)
+
+        try:
+            operation_util.start_operation(
+                context, self._get_add_item_progress)
+            instance = client.servers.create(name, None, flavor_id,
+                meta=instance_metadata, min_count=1, max_count=1,
+                security_groups=groups_names, key_name=key_name,
+                availability_zone=scope.get_name(), block_device_mapping=bdm,
+                nics=nics)
+            if not acs:
+                operation_util.set_item_id(context, instance.id)
+        finally:
+            if ssh_keys is not None:
+                client.keypairs.delete(key_name)
 
         for disk in disks:
             instance_disk_api.API().register_item(context, name,
@@ -319,7 +328,7 @@ class API(base_api.API):
 
         instance = utils.to_dict(client.servers.get(instance.id))
         instance = self._prepare_instance(client, context, instance)
-        if "descripton" in body:
+        if "description" in body:
             instance["description"] = body["description"]
         instance = self._add_db_item(context, instance)
 

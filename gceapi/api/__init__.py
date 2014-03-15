@@ -38,14 +38,20 @@ LOG = logging.getLogger(__name__)
 
 gce_opts = [
     cfg.StrOpt('network_api',
-               default="neutron",
-               help='Name of network API. neutron(quantum) or nova'),
+        default="neutron",
+        help='Name of network API. neutron(quantum) or nova'),
     cfg.StrOpt('keystone_gce_url',
-               default='http://127.0.0.1:5000/v2.0',
-               help='Keystone URL'),
+        default='http://127.0.0.1:5000/v2.0',
+        help='Keystone URL'),
     cfg.StrOpt('public_network',
-               default='public',
-               help='name of public network'),
+        default='public',
+        help='name of public network'),
+    cfg.StrOpt('protocol_dir',
+        default=None,
+        help='Place of protocol files'),
+    cfg.StrOpt('region_list',
+        default='RegionOne',
+        help='list of regions separated by commas'),
     ]
 
 CONF = cfg.CONF

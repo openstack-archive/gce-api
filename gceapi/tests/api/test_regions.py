@@ -18,11 +18,11 @@ from gceapi.tests.api import common
 
 EXPECTED_REGIONS = [
   {
-    "id": "6643843765891209621",
+    "id": "1905250285734383880",
     "kind": "compute#region",
     "selfLink": "http://localhost/compute/v1beta15/projects/fake_project"
-        "/regions/nova",
-    "name": "nova",
+        "/regions/RegionOne",
+    "name": "RegionOne",
     "status": "UP",
     "zones": [
       "http://localhost/compute/v1beta15/projects/fake_project"
@@ -31,14 +31,14 @@ EXPECTED_REGIONS = [
 ]
 
 
-class RegionsControllerTest(common.GCEControllerTest):
+class RegionsTest(common.GCEControllerTest):
     """
     Test of the GCE API /regions appliication.
     """
 
     def setUp(self):
         """Run before each test."""
-        super(RegionsControllerTest, self).setUp()
+        super(RegionsTest, self).setUp()
         self.controller = regions.Controller()
 
     def test_get_region_by_invalid_name(self):
@@ -46,14 +46,14 @@ class RegionsControllerTest(common.GCEControllerTest):
         self.assertEqual(404, response.status_int)
 
     def test_get_region(self):
-        response = self.request_gce('/fake_project/regions/nova')
+        response = self.request_gce('/fake_project/regions/RegionOne')
         expected = EXPECTED_REGIONS[0]
 
         self.assertEqual(response.json_body, expected)
 
     def test_get_region_list_filtered(self):
         response = self.request_gce("/fake_project/regions"
-                                    "?filter=name+eq+nova")
+                                    "?filter=name+eq+RegionOne")
         expected = {
             "kind": "compute#regionList",
             "id": "projects/fake_project/regions",
