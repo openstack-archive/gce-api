@@ -24,7 +24,10 @@ from gceapi.api import scopes
 from gceapi.api import utils
 from gceapi import exception
 from gceapi.openstack.common.gettextutils import _
+from gceapi.openstack.common import log as logging
 from gceapi.openstack.common import timeutils
+
+LOG = logging.getLogger(__name__)
 
 
 class Controller(object):
@@ -105,7 +108,8 @@ class Controller(object):
         try:
             item = self._api.get_item(context, id, scope)
             return self.format_item(req, item, scope)
-        except (exception.NotFound, KeyError, IndexError):
+        except (exception.NotFound, KeyError, IndexError) as ex:
+            LOG.exception(ex)
             msg = _("Resource '%s' could not be found") % id
             raise exc.HTTPNotFound(explanation=msg)
 
@@ -142,7 +146,8 @@ class Controller(object):
                                       self._type_name, id, scope)
         try:
             self._api.delete_item(context, id, scope)
-        except (exception.NotFound, KeyError, IndexError):
+        except (exception.NotFound, KeyError, IndexError) as ex:
+            LOG.exception(ex)
             msg = _("Resource '%s' could not be found") % id
             raise exc.HTTPNotFound(explanation=msg)
 

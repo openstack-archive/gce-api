@@ -36,10 +36,12 @@ class API(base_api.API):
         "queued": "PENDING",
         "saving": "PENDING",
         "active": "READY",
-        "killed": "FAILED",
+        # "killed": "",
         # "deleted": "",
         # "pending_delete": ""
     }
+    
+    _deleted_statuses = ["killed", "deleted", "pending_delete"]
 
     def __init__(self, *args, **kwargs):
         super(API, self).__init__(*args, **kwargs)
@@ -62,7 +64,7 @@ class API(base_api.API):
             filters={"name": name, "disk_format": "raw"})
         result = None
         for image in images:
-            if image.status == "deleted":
+            if image.status in self._deleted_statuses:
                 continue
             if result:
                 msg = _("Image resource '%s' found more than once") % name
@@ -136,7 +138,7 @@ class API(base_api.API):
         image_service = clients.glance(context).images
         try:
             image = image_service.get(image_id)
+            if image.status in self._deleted_statuses:
+                return operation_api.gef_final_progress()
         except glanceclient_exc.HTTPNotFound:
             return operation_api.gef_final_progress()
-        if image.status not in ["pending_delete", "deleted"]:
-            return operation_api.gef_final_progress(True)
