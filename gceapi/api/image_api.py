@@ -41,6 +41,8 @@ class API(base_api.API):
         # "pending_delete": ""
     }
 
+    _deleted_statuses = ["deleted", "pending_delete"]
+
     def __init__(self, *args, **kwargs):
         super(API, self).__init__(*args, **kwargs)
         operation_api.API().register_get_progress_method(
@@ -62,7 +64,7 @@ class API(base_api.API):
             filters={"name": name, "disk_format": "raw"})
         result = None
         for image in images:
-            if image.status == "deleted":
+            if image.status in self._deleted_statuses:
                 continue
             if result:
                 msg = _("Image resource '%s' found more than once") % name
@@ -77,6 +79,9 @@ class API(base_api.API):
 
     def get_items(self, context, scope=None):
         image_service = clients.glance(context).images
+        # NOTE(apavlov): Currently glance doesn't report "killed" images in
+        # list which causes incompatibility with GCE which reports
+        # corresponding "FAILED" images if upload has failed.
         images = image_service.list(filters={"disk_format": "raw"})
         items = list()
         gce_images = self._get_db_items_dict(context)
@@ -136,7 +141,7 @@ class API(base_api.API):
         image_service = clients.glance(context).images
         try:
             image = image_service.get(image_id)
+            if image.status in self._deleted_statuses:
+                return operation_api.gef_final_progress()
         except glanceclient_exc.HTTPNotFound:
             return operation_api.gef_final_progress()
-        if image.status not in ["pending_delete", "deleted"]:
-            return operation_api.gef_final_progress(True)
