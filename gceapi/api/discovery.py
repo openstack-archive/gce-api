@@ -17,8 +17,10 @@ import os
 import threading
 import webob
 
+from keystoneclient.v2_0 import client as keystone_client
 from oslo.config import cfg
 
+from gceapi.api import clients
 from gceapi.openstack.common import log as logging
 from gceapi import wsgi_ext as openstack_wsgi
 
@@ -34,9 +36,20 @@ class Controller(object):
     def discovery(self, req, version):
         """Returns appropriate json by its version."""
 
-        key = version + req.host_url
+        key = version
         if key in self._files:
             return self._files[key]
+
+        tenant = FLAGS.keystone_authtoken["admin_tenant_name"]
+        user = FLAGS.keystone_authtoken["admin_user"]
+        password = FLAGS.keystone_authtoken["admin_password"]
+        keystone = keystone_client.Client(username=user, password=password,
+            tenant_name=tenant, auth_url=FLAGS.keystone_gce_url)
+        catalog = keystone.service_catalog.catalog["serviceCatalog"]
+        public_url = clients.get_endpoint_from_catalog(catalog, "gceapi")
+        if not public_url:
+            public_url = req.host_url
+        public_url = public_url.rstrip("/")
 
         self._lock.acquire()
         try:
@@ -44,7 +57,7 @@ class Controller(object):
                 return self._files[key]
 
             jfile = self._load_file(version)
-            jfile = jfile.replace("{HOST_URL}", req.host_url)
+            jfile = jfile.replace("{HOST_URL}", public_url)
             self._files[key] = jfile
             return jfile
         finally:

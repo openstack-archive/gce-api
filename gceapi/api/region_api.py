@@ -24,7 +24,8 @@ CONF = cfg.CONF
 class API(base_api.API):
     """GCE Regions API
 
-    Stubbed now for support only one predefined region nova
+    Stubbed now for support only one predefined region from config
+    #TODO(apavlov): need to implement discovering or regions from keystone
     """
 
     KIND = "region"
@@ -32,8 +33,7 @@ class API(base_api.API):
 
     def __init__(self, *args, **kwargs):
         super(API, self).__init__(*args, **kwargs)
-        regions = CONF.get("region_list").split(",")
-        self._REGIONS = [r.strip() for r in regions]
+        self._REGIONS = [CONF.get("region").strip()]
 
     def _get_type(self):
         return self.KIND

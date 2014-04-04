@@ -58,7 +58,7 @@ def nova(context, service_type='compute'):
 
     client = novaclient.Client(1.1, **args)
 
-    management_url = _url_for(context, service_type=service_type)
+    management_url = get_endpoint(context, service_type)
     client.client.auth_token = context.auth_token
     client.client.management_url = management_url
 
@@ -73,7 +73,7 @@ def neutron(context):
         'auth_url': CONF.keystone_gce_url,
         'service_type': 'network',
         'token': context.auth_token,
-        'endpoint_url': _url_for(context, service_type='network'),
+        'endpoint_url': get_endpoint(context, 'network'),
     }
 
     return neutronclient.Client(**args)
@@ -90,7 +90,7 @@ def glance(context):
     }
 
     return glanceclient.Client(
-        "1", endpoint=_url_for(context, service_type='image'), **args)
+        "1", endpoint=get_endpoint(context, 'image'), **args)
 
 
 def cinder(context):
@@ -105,7 +105,7 @@ def cinder(context):
     }
 
     _cinder = cinderclient.Client('1', **args)
-    management_url = _url_for(context, service_type='volume')
+    management_url = get_endpoint(context, 'volume')
     _cinder.client.auth_token = context.auth_token
     _cinder.client.management_url = management_url
 
@@ -121,21 +121,25 @@ def keystone(context):
     return _keystone
 
 
-def _url_for(context, **kwargs):
+def get_endpoint_from_catalog(service_catalog, service_type):
+    for service in service_catalog:
+        if service["type"] != service_type:
+            continue
+        for endpoint in service["endpoints"]:
+            if endpoint["region"] != CONF["region"]:
+                continue
+            return endpoint.get("publicURL")
+
+        return None
+
+    return None
+
+
+def get_endpoint(context, service_type):
     service_catalog = context.service_catalog
     if not service_catalog:
         catalog = keystone(context).service_catalog.catalog
         service_catalog = catalog["serviceCatalog"]
         context.service_catalog = service_catalog
 
-    service_type = kwargs["service_type"]
-    for service in service_catalog:
-        if service["type"] != service_type:
-            continue
-        for endpoint in service["endpoints"]:
-            if "publicURL" in endpoint:
-                return endpoint["publicURL"]
-        else:
-            return None
-
-    return None
+    return get_endpoint_from_catalog(service_catalog, service_type)

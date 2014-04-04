@@ -49,9 +49,9 @@ gce_opts = [
     cfg.StrOpt('protocol_dir',
         default=None,
         help='Place of protocol files'),
-    cfg.StrOpt('region_list',
+    cfg.StrOpt('region',
         default='RegionOne',
-        help='list of regions separated by commas'),
+        help='Region of this service'),
     ]
 
 CONF = cfg.CONF

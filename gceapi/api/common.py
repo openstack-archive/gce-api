@@ -18,6 +18,9 @@ import os.path
 import re
 from webob import exc
 
+from oslo.config import cfg
+
+from gceapi.api import clients
 from gceapi.api import operation_api
 from gceapi.api import operation_util
 from gceapi.api import scopes
@@ -28,6 +31,7 @@ from gceapi.openstack.common import log as logging
 from gceapi.openstack.common import timeutils
 
 LOG = logging.getLogger(__name__)
+FLAGS = cfg.CONF
 
 
 class Controller(object):
@@ -263,8 +267,16 @@ class Controller(object):
         'zones/zone_id' prefix for zone(similar for regions) resources.
         """
 
+        context = self._get_context(request)
+        public_url = clients.get_endpoint(context, "gceapi")
+        if public_url:
+            public_url = public_url.rstrip("/") + "/"\
+                + request.script_name.lstrip("/")
+        else:
+            public_url = request.application_url
+
         result = os.path.join(
-            request.application_url, self._get_context(request).project_name)
+            public_url, context.project_name)
         if controller:
             if scope:
                 result = os.path.join(result, scope.get_path())
