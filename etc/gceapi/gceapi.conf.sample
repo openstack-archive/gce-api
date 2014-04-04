@@ -60,20 +60,6 @@
 
 
 #
-# Options defined in gceapi.api
-#
-
-# Name of network API. neutron(quantum) or nova (string value)
-#network_api=neutron
-
-# Keystone URL (string value)
-#keystone_gce_url=http://127.0.0.1:5000/v2.0
-
-# name of public network (string value)
-#public_network=public
-
-
-#
 # Options defined in gceapi.wsgi
 #
 
@@ -100,6 +86,29 @@
 # Sets the value of TCP_KEEPIDLE in seconds for each server
 # socket. Not supported on OS X. (integer value)
 #tcp_keepidle=600
+
+
+#
+# Options defined in gceapi.api
+#
+
+# Name of network API. neutron(quantum) or nova (string value)
+#network_api=neutron
+
+# Keystone URL (string value)
+#keystone_gce_url=http://127.0.0.1:5000/v2.0
+
+# name of public network (string value)
+#public_network=public
+
+# Place of protocol files (string value)
+#protocol_dir=<None>
+
+# list of regions separated by commas (string value)
+#region_list=RegionOne
+
+# public url of GCE API service (string value)
+#public_url=<None>
 
 
 #
@@ -181,7 +190,6 @@
 # configuration to any other existing logging options. Please
 # see the Python logging module documentation for details on
 # logging configuration files. (string value)
-# Deprecated group/name - [DEFAULT]/log_config
 #log_config_append=<None>
 
 # DEPRECATED. A logging.Formatter log message format string
@@ -197,12 +205,10 @@
 
 # (Optional) Name of log file to output to. If no default is
 # set, logging will go to stdout. (string value)
-# Deprecated group/name - [DEFAULT]/logfile
 #log_file=<None>
 
 # (Optional) The base directory used for relative --log-file
 # paths (string value)
-# Deprecated group/name - [DEFAULT]/logdir
 #log_dir=<None>
 
 # Use syslog for logging. Existing syslog format is DEPRECATED
@@ -227,7 +233,6 @@
 #
 
 # The backend to use for db (string value)
-# Deprecated group/name - [DEFAULT]/db_backend
 #backend=sqlalchemy
 
 
@@ -237,9 +242,6 @@
 
 # The SQLAlchemy connection string used to connect to the
 # database (string value)
-# Deprecated group/name - [DEFAULT]/sql_connection
-# Deprecated group/name - [DATABASE]/sql_connection
-# Deprecated group/name - [sql]/connection
 #connection=sqlite:////gceapi/openstack/common/db/$sqlite_db
 
 # The SQLAlchemy connection string used to connect to the
@@ -248,53 +250,38 @@
 
 # Timeout before idle sql connections are reaped (integer
 # value)
-# Deprecated group/name - [DEFAULT]/sql_idle_timeout
-# Deprecated group/name - [DATABASE]/sql_idle_timeout
-# Deprecated group/name - [sql]/idle_timeout
 #idle_timeout=3600
 
 # Minimum number of SQL connections to keep open in a pool
 # (integer value)
-# Deprecated group/name - [DEFAULT]/sql_min_pool_size
-# Deprecated group/name - [DATABASE]/sql_min_pool_size
 #min_pool_size=1
 
 # Maximum number of SQL connections to keep open in a pool
 # (integer value)
-# Deprecated group/name - [DEFAULT]/sql_max_pool_size
-# Deprecated group/name - [DATABASE]/sql_max_pool_size
 #max_pool_size=<None>
 
 # Maximum db connection retries during startup. (setting -1
 # implies an infinite retry count) (integer value)
-# Deprecated group/name - [DEFAULT]/sql_max_retries
-# Deprecated group/name - [DATABASE]/sql_max_retries
 #max_retries=10
 
 # Interval between retries of opening a sql connection
 # (integer value)
-# Deprecated group/name - [DEFAULT]/sql_retry_interval
-# Deprecated group/name - [DATABASE]/reconnect_interval
 #retry_interval=10
 
 # If set, use this value for max_overflow with sqlalchemy
 # (integer value)
-# Deprecated group/name - [DEFAULT]/sql_max_overflow
-# Deprecated group/name - [DATABASE]/sqlalchemy_max_overflow
 #max_overflow=<None>
 
 # Verbosity of SQL debugging information. 0=None,
 # 100=Everything (integer value)
-# Deprecated group/name - [DEFAULT]/sql_connection_debug
 #connection_debug=0
 
 # Add python stack traces to SQL as comment strings (boolean
 # value)
-# Deprecated group/name - [DEFAULT]/sql_connection_trace
 #connection_trace=false
 
 # If set, use this value for pool_timeout with sqlalchemy
 # (integer value)
-# Deprecated group/name - [DATABASE]/sqlalchemy_pool_timeout
 #pool_timeout=<None>
+
 

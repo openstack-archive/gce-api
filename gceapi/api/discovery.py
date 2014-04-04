@@ -34,9 +34,13 @@ class Controller(object):
     def discovery(self, req, version):
         """Returns appropriate json by its version."""
 
-        key = version + req.host_url
+        key = version
         if key in self._files:
             return self._files[key]
+
+        public_url = FLAGS.get("public_url")
+        if not public_url:
+            public_url = req.host_url
 
         self._lock.acquire()
         try:
@@ -44,7 +48,7 @@ class Controller(object):
                 return self._files[key]
 
             jfile = self._load_file(version)
-            jfile = jfile.replace("{HOST_URL}", req.host_url)
+            jfile = jfile.replace("{HOST_URL}", public_url)
             self._files[key] = jfile
             return jfile
         finally:

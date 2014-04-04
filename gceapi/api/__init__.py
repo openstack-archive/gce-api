@@ -52,6 +52,9 @@ gce_opts = [
     cfg.StrOpt('region_list',
         default='RegionOne',
         help='list of regions separated by commas'),
+    cfg.StrOpt('public_url',
+        default=None,
+        help='public url of GCE API service'),
     ]
 
 CONF = cfg.CONF
