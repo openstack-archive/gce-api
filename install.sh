@@ -4,7 +4,7 @@
 SERVICE_USERNAME=gceapi
 SERVICE_PASSWORD=gceapi
 SERVICE_TENANT=service
-CONNECTION="mysql://root:password@127.0.0.1/gceapi?charset=utf8"
+CONNECTION="mysql://gceapi:gceapi@127.0.0.1/gceapi?charset=utf8"
 LOG_DIR=/var/log/gceapi
 CONF_DIR=/etc/gceapi
 SIGNING_DIR=/var/cache/gceapi
@@ -208,6 +208,7 @@ fi
 if [ ! -s $APIPASTE_FILE ]; then
     sudo cp etc/gceapi/api-paste.ini $APIPASTE_FILE
 fi
+sudo cp -nR etc/gceapi/protocols $CONF_DIR
 
 AUTH_HOST=${OS_AUTH_URL#*//}
 AUTH_HOST=${AUTH_HOST%:*}
@@ -225,6 +226,7 @@ iniset $CONF_FILE DEFAULT verbose True
 iniset $CONF_FILE DEFAULT keystone_gce_url "$OS_AUTH_URL"
 iniset $CONF_FILE DEFAULT network_api "$NETWORK_API"
 iniset $CONF_FILE DEFAULT region "$REGION"
+iniset $CONF_FILE DEFAULT protocol_dir $CONF_DIR/protocols
 iniset $CONF_FILE database connection "$CONNECTION"
 
 iniset $CONF_FILE keystone_authtoken signing_dir $SIGNING_DIR
