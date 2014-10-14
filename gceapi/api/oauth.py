@@ -32,7 +32,8 @@ LOG = logging.getLogger(__name__)
 
 
 INTERNAL_GCUTIL_PROJECTS = ["debian-cloud", "centos-cloud", "suse-cloud",
-                            "rhel-cloud", "windows-cloud", "google"]
+                            "rhel-cloud", "windows-cloud", "google",
+                            "coreos-cloud", "opensuse-cloud"]
 
 
 class OAuthFault(openstack_wsgi.Fault):
