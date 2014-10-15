@@ -41,6 +41,7 @@ EXPECTED_INSTANCES = [{
         }]
     }],
     "disks": [{
+        "autoDelete": False,
         "kind": "compute#attachedDisk",
         "index": 0,
         "type": "PERSISTENT",

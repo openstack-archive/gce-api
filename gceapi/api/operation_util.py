@@ -15,6 +15,7 @@
 import threading
 
 from gceapi.api import operation_api
+from gceapi.openstack.common.gettextutils import _
 from gceapi.openstack.common import timeutils
 
 
@@ -45,7 +46,6 @@ def start_operation(context, get_progress_method=None, item_id=None):
     context.operation_start_time = timeutils.isotime(None, True)
     context.operation_get_progress_method = get_progress_method
     context.operation_item_id = item_id
-    set_item_id(context, item_id)
 
 
 def set_item_id(context, item_id):
@@ -62,12 +62,28 @@ def _continue_operation(context, func):
     operation = context.operation
     try:
         operation_result = func()
+        if not is_final_progress(operation_result):
+            continue_operation(context, func, timeout=2)
     except Exception as ex:
         operation_result = ex
-    if operation is None:
-        return
-    if operation_result is None:
-        continue_operation(context, func, timeout=2)
-    else:
-        operation_api.API().update_operation(context, operation["id"],
-                                             operation_result)
+
+    operation_api.API().update_operation(context, operation["id"],
+                                         operation_result)
+
+
+def get_final_progress(with_error=False):
+    progress = {"progress": 100}
+    if with_error:
+        progress["error_code"] = 500
+        progress["error_message"] = _('Internal server error')
+        progress["errors"] = [{
+           "code": "UNKNOWN_OS_ERROR",
+           "message": _("Operation finished with unknown error. "
+                        "See OpenStack logs.")
+        }]
+    return progress
+
+
+def is_final_progress(progress):
+    return progress is not None and (progress.get("progress") == 100 or
+                                     progress.get("error_code") is not None)
