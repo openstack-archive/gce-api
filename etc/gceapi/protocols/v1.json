@@ -4,7 +4,7 @@
  "id": "compute:v1",
  "name": "compute",
  "version": "v1",
- "revision": "20131120",
+ "revision": "20140804",
  "title": "Compute Engine API",
  "description": "API for the Google Compute Engine service.",
  "ownerDomain": "google.com",
@@ -13,7 +13,7 @@
   "x16": "http://www.google.com/images/icons/product/compute_engine-16.png",
   "x32": "http://www.google.com/images/icons/product/compute_engine-32.png"
  },
- "documentationLink": "https://developers.google.com/compute/docs/reference/v1",
+ "documentationLink": "https://developers.google.com/compute/docs/reference/latest/",
  "protocol": "rest",
  "baseUrl": "{HOST_URL}/compute/v1/projects/",
  "basePath": "/compute/v1/projects/",
@@ -157,7 +157,7 @@
     },
     "region": {
      "type": "string",
-     "description": "URL of the region where the address resides (output only)."
+     "description": "URL of the region where the regional address resides (output only). This field is not applicable to global addresses."
     },
     "selfLink": {
      "type": "string",
@@ -242,7 +242,7 @@
     },
     "selfLink": {
      "type": "string",
-     "description": "Server defined URL for this resource (output only)."
+     "description": "Server defined URL for the resource (output only)."
     }
    }
   },
@@ -266,6 +266,7 @@
        "description": "The warning type identifier for this warning.",
        "enum": [
         "DEPRECATED_RESOURCE_USED",
+        "DISK_SIZE_LARGER_THAN_IMAGE_SIZE",
         "INJECTED_KERNELS_DEPRECATED",
         "NEXT_HOP_ADDRESS_NOT_ASSIGNED",
         "NEXT_HOP_CANNOT_IP_FORWARD",
@@ -274,9 +275,12 @@
         "NEXT_HOP_NOT_RUNNING",
         "NO_RESULTS_ON_PAGE",
         "REQUIRED_TOS_AGREEMENT",
+        "RESOURCE_NOT_DELETED",
         "UNREACHABLE"
        ],
        "enumDescriptions": [
+        "",
+        "",
         "",
         "",
         "",
@@ -319,6 +323,10 @@
    "type": "object",
    "description": "An instance-attached disk resource.",
    "properties": {
+    "autoDelete": {
+     "type": "boolean",
+     "description": "Whether the disk will be auto-deleted when the instance is deleted (but not when the disk is detached from the instance)."
+    },
     "boot": {
      "type": "boolean",
      "description": "Indicates that this is a boot disk. VM will use the first partition of the disk for its root filesystem."
@@ -331,6 +339,10 @@
      "type": "integer",
      "description": "A zero-based index to assign to this disk, where 0 is reserved for the boot disk. If not specified, the server will choose an appropriate value (output only).",
      "format": "int32"
+    },
+    "initializeParams": {
+     "$ref": "AttachedDiskInitializeParams",
+     "description": "Initialization parameters."
     },
     "kind": {
      "type": "string",
@@ -369,6 +381,30 @@
        "compute.instances.insert"
       ]
      }
+    }
+   }
+  },
+  "AttachedDiskInitializeParams": {
+   "id": "AttachedDiskInitializeParams",
+   "type": "object",
+   "description": "Initialization parameters for the new disk (input-only). Can only be specified on the boot disk or local SSDs. Mutually exclusive with 'source'.",
+   "properties": {
+    "diskName": {
+     "type": "string",
+     "description": "Name of the disk (when not provided defaults to the name of the instance)."
+    },
+    "diskSizeGb": {
+     "type": "string",
+     "description": "Size of the disk in base-2 GB.",
+     "format": "int64"
+    },
+    "diskType": {
+     "type": "string",
+     "description": "URL of the disk type resource describing which disk type to use to create the disk; provided by the client when the disk is created."
+    },
+    "sourceImage": {
+     "type": "string",
+     "description": "The source image used to create this disk."
     }
    }
   },
@@ -454,6 +490,14 @@
      "type": "string",
      "description": "Size of the persistent disk, specified in GB. This parameter is optional when creating a disk from a disk image or a snapshot, otherwise it is required.",
      "format": "int64"
+    },
+    "sourceImage": {
+     "type": "string",
+     "description": "The source image used to create this disk. Once the source image has been deleted from the system, this field will not be set, even if an image with the same name has been re-created."
+    },
+    "sourceImageId": {
+     "type": "string",
+     "description": "The 'id' value of the image used to create this disk. This value may be used to determine whether the disk was created from the current or a previous instance of a given image."
     },
     "sourceSnapshot": {
      "type": "string",
@@ -567,6 +611,7 @@
        "description": "The warning type identifier for this warning.",
        "enum": [
         "DEPRECATED_RESOURCE_USED",
+        "DISK_SIZE_LARGER_THAN_IMAGE_SIZE",
         "INJECTED_KERNELS_DEPRECATED",
         "NEXT_HOP_ADDRESS_NOT_ASSIGNED",
         "NEXT_HOP_CANNOT_IP_FORWARD",
@@ -575,9 +620,12 @@
         "NEXT_HOP_NOT_RUNNING",
         "NO_RESULTS_ON_PAGE",
         "REQUIRED_TOS_AGREEMENT",
+        "RESOURCE_NOT_DELETED",
         "UNREACHABLE"
        ],
        "enumDescriptions": [
+        "",
+        "",
         "",
         "",
         "",
@@ -744,11 +792,11 @@
    "properties": {
     "IPAddress": {
      "type": "string",
-     "description": "Value of the reserved IP address that this forwarding rule is serving on behalf of. The address resource must live in the same region as the forwarding rule. If left empty (default value), an ephemeral IP will be assigned."
+     "description": "Value of the reserved IP address that this forwarding rule is serving on behalf of. For global forwarding rules, the address must be a global IP; for regional forwarding rules, the address must live in the same region as the forwarding rule. If left empty (default value), an ephemeral IP from the same scope (global or regional) will be assigned."
     },
     "IPProtocol": {
      "type": "string",
-     "description": "The IP protocol to which this rule applies, valid options are 'TCP', 'UDP', 'ESP', 'AH' or 'SCTP'",
+     "description": "The IP protocol to which this rule applies, valid options are 'TCP', 'UDP', 'ESP', 'AH' or 'SCTP'.",
      "enum": [
       "AH",
       "ESP",
@@ -789,11 +837,11 @@
     },
     "portRange": {
      "type": "string",
-     "description": "Applicable only when 'IPProtocol' is 'TCP', 'UDP' or 'SCTP', only packets addressed to ports in the specified range will be forwarded to 'target'. If 'portRange' is left empty (default value), all ports are forwarded. Forwarding rules with the same [IPAddress, IPProtocol] pair must have disjoint port ranges. @pattern: \\d+(?:-\\d+)?"
+     "description": "Applicable only when 'IPProtocol' is 'TCP', 'UDP' or 'SCTP', only packets addressed to ports in the specified range will be forwarded to 'target'. If 'portRange' is left empty (default value), all ports are forwarded. Forwarding rules with the same [IPAddress, IPProtocol] pair must have disjoint port ranges."
     },
     "region": {
      "type": "string",
-     "description": "URL of the region where the forwarding rule resides (output only)."
+     "description": "URL of the region where the regional forwarding rule resides (output only). This field is not applicable to global forwarding rules."
     },
     "selfLink": {
      "type": "string",
@@ -801,7 +849,7 @@
     },
     "target": {
      "type": "string",
-     "description": "The URL of the target resource to receive the matched traffic. It must live in the same region as this forwarding rule."
+     "description": "The URL of the target resource to receive the matched traffic. For regional forwarding rules, this target must live in the same region as the forwarding rule. For global forwarding rules, this target must be a global TargetHttpProxy resource."
     }
    }
   },
@@ -887,6 +935,7 @@
        "description": "The warning type identifier for this warning.",
        "enum": [
         "DEPRECATED_RESOURCE_USED",
+        "DISK_SIZE_LARGER_THAN_IMAGE_SIZE",
         "INJECTED_KERNELS_DEPRECATED",
         "NEXT_HOP_ADDRESS_NOT_ASSIGNED",
         "NEXT_HOP_CANNOT_IP_FORWARD",
@@ -895,9 +944,12 @@
         "NEXT_HOP_NOT_RUNNING",
         "NO_RESULTS_ON_PAGE",
         "REQUIRED_TOS_AGREEMENT",
+        "RESOURCE_NOT_DELETED",
         "UNREACHABLE"
        ],
        "enumDescriptions": [
+        "",
+        "",
         "",
         "",
         "",
@@ -1090,6 +1142,11 @@
      "type": "string",
      "description": "Textual description of the resource; provided by the client when the resource is created."
     },
+    "diskSizeGb": {
+     "type": "string",
+     "description": "Size of the image when restored onto a disk (in GiB).",
+     "format": "int64"
+    },
     "id": {
      "type": "string",
      "description": "Unique identifier for the resource; defined by the server (output only).",
@@ -1117,7 +1174,12 @@
       "containerType": {
        "type": "string",
        "description": "The format used to encode and transmit the block device. Should be TAR. This is just a container and transmission format and not a runtime format. Provided by the client when the disk image is created.",
-       "default": "TAR"
+       "enum": [
+        "TAR"
+       ],
+       "enumDescriptions": [
+        ""
+       ]
       },
       "sha1Checksum": {
        "type": "string",
@@ -1139,6 +1201,14 @@
      "type": "string",
      "description": "Server defined URL for the resource (output only)."
     },
+    "sourceDisk": {
+     "type": "string",
+     "description": "The source disk used to create this image. Once the source disk has been deleted from the system, this field will be cleared, and will not be set even if a disk with the same name has been re-created."
+    },
+    "sourceDiskId": {
+     "type": "string",
+     "description": "The 'id' value of the disk used to create this image. This value may be used to determine whether the image was taken from the current or a previous instance of a given disk name."
+    },
     "sourceType": {
      "type": "string",
      "description": "Must be \"RAW\"; provided by the client when the disk image is created.",
@@ -1148,12 +1218,7 @@
      ],
      "enumDescriptions": [
       ""
-     ],
-     "annotations": {
-      "required": [
-       "compute.images.insert"
-      ]
-     }
+     ]
     },
     "status": {
      "type": "string",
@@ -1406,6 +1471,7 @@
        "description": "The warning type identifier for this warning.",
        "enum": [
         "DEPRECATED_RESOURCE_USED",
+        "DISK_SIZE_LARGER_THAN_IMAGE_SIZE",
         "INJECTED_KERNELS_DEPRECATED",
         "NEXT_HOP_ADDRESS_NOT_ASSIGNED",
         "NEXT_HOP_CANNOT_IP_FORWARD",
@@ -1414,9 +1480,12 @@
         "NEXT_HOP_NOT_RUNNING",
         "NO_RESULTS_ON_PAGE",
         "REQUIRED_TOS_AGREEMENT",
+        "RESOURCE_NOT_DELETED",
         "UNREACHABLE"
        ],
        "enumDescriptions": [
+        "",
+        "",
         "",
         "",
         "",
@@ -1617,6 +1686,7 @@
        "description": "The warning type identifier for this warning.",
        "enum": [
         "DEPRECATED_RESOURCE_USED",
+        "DISK_SIZE_LARGER_THAN_IMAGE_SIZE",
         "INJECTED_KERNELS_DEPRECATED",
         "NEXT_HOP_ADDRESS_NOT_ASSIGNED",
         "NEXT_HOP_CANNOT_IP_FORWARD",
@@ -1625,9 +1695,12 @@
         "NEXT_HOP_NOT_RUNNING",
         "NO_RESULTS_ON_PAGE",
         "REQUIRED_TOS_AGREEMENT",
+        "RESOURCE_NOT_DELETED",
         "UNREACHABLE"
        ],
        "enumDescriptions": [
+        "",
+        "",
         "",
         "",
         "",
@@ -1962,6 +2035,7 @@
         "description": "The warning type identifier for this warning.",
         "enum": [
          "DEPRECATED_RESOURCE_USED",
+         "DISK_SIZE_LARGER_THAN_IMAGE_SIZE",
          "INJECTED_KERNELS_DEPRECATED",
          "NEXT_HOP_ADDRESS_NOT_ASSIGNED",
          "NEXT_HOP_CANNOT_IP_FORWARD",
@@ -1970,9 +2044,12 @@
          "NEXT_HOP_NOT_RUNNING",
          "NO_RESULTS_ON_PAGE",
          "REQUIRED_TOS_AGREEMENT",
+         "RESOURCE_NOT_DELETED",
          "UNREACHABLE"
         ],
         "enumDescriptions": [
+         "",
+         "",
          "",
          "",
          "",
@@ -2097,6 +2174,7 @@
        "description": "The warning type identifier for this warning.",
        "enum": [
         "DEPRECATED_RESOURCE_USED",
+        "DISK_SIZE_LARGER_THAN_IMAGE_SIZE",
         "INJECTED_KERNELS_DEPRECATED",
         "NEXT_HOP_ADDRESS_NOT_ASSIGNED",
         "NEXT_HOP_CANNOT_IP_FORWARD",
@@ -2105,9 +2183,12 @@
         "NEXT_HOP_NOT_RUNNING",
         "NO_RESULTS_ON_PAGE",
         "REQUIRED_TOS_AGREEMENT",
+        "RESOURCE_NOT_DELETED",
         "UNREACHABLE"
        ],
        "enumDescriptions": [
+        "",
+        "",
         "",
         "",
         "",
@@ -2186,6 +2267,10 @@
     "selfLink": {
      "type": "string",
      "description": "Server defined URL for the resource (output only)."
+    },
+    "usageExportLocation": {
+     "$ref": "UsageExportLocation",
+     "description": "The location in Cloud Storage and naming method of the daily usage report."
     }
    }
   },
@@ -2203,6 +2288,7 @@
      "type": "string",
      "description": "Name of the quota metric.",
      "enum": [
+      "BACKEND_SERVICES",
       "CPUS",
       "DISKS",
       "DISKS_TOTAL_GB",
@@ -2220,11 +2306,18 @@
       "OPERATIONS",
       "ROUTES",
       "SNAPSHOTS",
+      "SSD_TOTAL_GB",
       "STATIC_ADDRESSES",
+      "TARGET_HTTP_PROXIES",
       "TARGET_INSTANCES",
-      "TARGET_POOLS"
+      "TARGET_POOLS",
+      "URL_MAPS"
      ],
      "enumDescriptions": [
+      "",
+      "",
+      "",
+      "",
       "",
       "",
       "",
@@ -2452,6 +2545,7 @@
         "description": "The warning type identifier for this warning.",
         "enum": [
          "DEPRECATED_RESOURCE_USED",
+         "DISK_SIZE_LARGER_THAN_IMAGE_SIZE",
          "INJECTED_KERNELS_DEPRECATED",
          "NEXT_HOP_ADDRESS_NOT_ASSIGNED",
          "NEXT_HOP_CANNOT_IP_FORWARD",
@@ -2460,9 +2554,12 @@
          "NEXT_HOP_NOT_RUNNING",
          "NO_RESULTS_ON_PAGE",
          "REQUIRED_TOS_AGREEMENT",
+         "RESOURCE_NOT_DELETED",
          "UNREACHABLE"
         ],
         "enumDescriptions": [
+         "",
+         "",
          "",
          "",
          "",
@@ -2725,286 +2822,45 @@
     }
    }
   },
-  "TargetPool": {
-   "id": "TargetPool",
-   "type": "object",
-   "description": "A TargetPool resource. This resource defines a pool of VMs, associated HttpHealthCheck resources, and the fallback TargetPool.",
-   "properties": {
-    "backupPool": {
-     "type": "string",
-     "description": "This field is applicable only when the containing target pool is serving a forwarding rule as the primary pool, and its 'failoverRatio' field is properly set to a value between [0, 1].\n\n'backupPool' and 'failoverRatio' together define the fallback behavior of the primary target pool: if the ratio of the healthy VMs in the primary pool is at or below 'failoverRatio', traffic arriving at the load-balanced IP will be directed to the backup pool.\n\nIn case where 'failoverRatio' and 'backupPool' are not set, or all the VMs in the backup pool are unhealthy, the traffic will be directed back to the primary pool in the \"force\" mode, where traffic will be spread to the healthy VMs with the best effort, or to all VMs when no VM is healthy."
-    },
-    "creationTimestamp": {
-     "type": "string",
-     "description": "Creation timestamp in RFC3339 text format (output only)."
-    },
-    "description": {
-     "type": "string",
-     "description": "An optional textual description of the resource; provided by the client when the resource is created."
-    },
-    "failoverRatio": {
-     "type": "number",
-     "description": "This field is applicable only when the containing target pool is serving a forwarding rule as the primary pool (i.e., not as a backup pool to some other target pool). The value of the field must be in [0, 1].\n\nIf set, 'backupPool' must also be set. They together define the fallback behavior of the primary target pool: if the ratio of the healthy VMs in the primary pool is at or below this number, traffic arriving at the load-balanced IP will be directed to the backup pool.\n\nIn case where 'failoverRatio' is not set or all the VMs in the backup pool are unhealthy, the traffic will be directed back to the primary pool in the \"force\" mode, where traffic will be spread to the healthy VMs with the best effort, or to all VMs when no VM is healthy.",
-     "format": "float"
-    },
-    "healthChecks": {
-     "type": "array",
-     "description": "A list of URLs to the HttpHealthCheck resource. A member VM in this pool is considered healthy if and only if all specified health checks pass. An empty list means all member VMs will be considered healthy at all times.",
-     "items": {
-      "type": "string"
-     }
-    },
-    "id": {
-     "type": "string",
-     "description": "Unique identifier for the resource; defined by the server (output only).",
-     "format": "uint64"
-    },
-    "instances": {
-     "type": "array",
-     "description": "A list of resource URLs to the member VMs serving this pool. They must live in zones contained in the same region as this pool.",
-     "items": {
-      "type": "string"
-     }
-    },
-    "kind": {
-     "type": "string",
-     "description": "Type of the resource.",
-     "default": "compute#targetPool"
-    },
-    "name": {
-     "type": "string",
-     "description": "Name of the resource; provided by the client when the resource is created. The name must be 1-63 characters long, and comply with RFC1035.",
-     "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?"
-    },
-    "region": {
-     "type": "string",
-     "description": "URL of the region where the target pool resides (output only)."
-    },
-    "selfLink": {
-     "type": "string",
-     "description": "Server defined URL for the resource (output only)."
-    },
-    "sessionAffinity": {
-     "type": "string",
-     "description": "Sesssion affinity option, must be one of the following values: 'NONE': Connections from the same client IP may go to any VM in the pool; 'CLIENT_IP': Connections from the same client IP will go to the same VM in the pool while that VM remains healthy. 'CLIENT_IP_PROTO': Connections from the same client IP with the same IP protocol will go to the same VM in the pool while that VM remains healthy.",
-     "enum": [
-      "CLIENT_IP",
-      "CLIENT_IP_PROTO",
-      "NONE"
-     ],
-     "enumDescriptions": [
-      "",
-      "",
-      ""
-     ]
-    }
-   }
-  },
-  "TargetPoolAggregatedList": {
-   "id": "TargetPoolAggregatedList",
-   "type": "object",
-   "properties": {
-    "id": {
-     "type": "string",
-     "description": "Unique identifier for the resource; defined by the server (output only)."
-    },
-    "items": {
-     "type": "object",
-     "description": "A map of scoped target pool lists.",
-     "additionalProperties": {
-      "$ref": "TargetPoolsScopedList",
-      "description": "Name of the scope containing this set of target pools."
-     }
-    },
-    "kind": {
-     "type": "string",
-     "description": "Type of resource.",
-     "default": "compute#targetPoolAggregatedList"
-    },
-    "nextPageToken": {
-     "type": "string",
-     "description": "A token used to continue a truncated list request (output only)."
-    },
-    "selfLink": {
-     "type": "string",
-     "description": "Server defined URL for this resource (output only)."
-    }
-   }
-  },
-  "TargetPoolInstanceHealth": {
-   "id": "TargetPoolInstanceHealth",
-   "type": "object",
-   "properties": {
-    "healthStatus": {
-     "type": "array",
-     "items": {
-      "$ref": "HealthStatus"
-     }
-    },
-    "kind": {
-     "type": "string",
-     "description": "Type of resource.",
-     "default": "compute#targetPoolInstanceHealth"
-    }
-   }
-  },
-  "TargetPoolList": {
-   "id": "TargetPoolList",
-   "type": "object",
-   "description": "Contains a list of TargetPool resources.",
-   "properties": {
-    "id": {
-     "type": "string",
-     "description": "Unique identifier for the resource; defined by the server (output only)."
-    },
-    "items": {
-     "type": "array",
-     "description": "The TargetPool resources.",
-     "items": {
-      "$ref": "TargetPool"
-     }
-    },
-    "kind": {
-     "type": "string",
-     "description": "Type of resource.",
-     "default": "compute#targetPoolList"
-    },
-    "nextPageToken": {
-     "type": "string",
-     "description": "A token used to continue a truncated list request (output only)."
-    },
-    "selfLink": {
-     "type": "string",
-     "description": "Server defined URL for this resource (output only)."
-    }
-   }
-  },
-  "TargetPoolsAddHealthCheckRequest": {
-   "id": "TargetPoolsAddHealthCheckRequest",
-   "type": "object",
-   "properties": {
-    "healthChecks": {
-     "type": "array",
-     "description": "Health check URLs to be added to targetPool.",
-     "items": {
-      "$ref": "HealthCheckReference"
-     }
-    }
-   }
-  },
-  "TargetPoolsAddInstanceRequest": {
-   "id": "TargetPoolsAddInstanceRequest",
-   "type": "object",
-   "properties": {
-    "instances": {
-     "type": "array",
-     "description": "URLs of the instances to be added to targetPool.",
-     "items": {
-      "$ref": "InstanceReference"
-     }
-    }
-   }
-  },
-  "TargetPoolsRemoveHealthCheckRequest": {
-   "id": "TargetPoolsRemoveHealthCheckRequest",
-   "type": "object",
-   "properties": {
-    "healthChecks": {
-     "type": "array",
-     "description": "Health check URLs to be removed from targetPool.",
-     "items": {
-      "$ref": "HealthCheckReference"
-     }
-    }
-   }
-  },
-  "TargetPoolsRemoveInstanceRequest": {
-   "id": "TargetPoolsRemoveInstanceRequest",
-   "type": "object",
-   "properties": {
-    "instances": {
-     "type": "array",
-     "description": "URLs of the instances to be removed from targetPool.",
-     "items": {
-      "$ref": "InstanceReference"
-     }
-    }
-   }
-  },
-  "TargetPoolsScopedList": {
-   "id": "TargetPoolsScopedList",
-   "type": "object",
-   "properties": {
-    "targetPools": {
-     "type": "array",
-     "description": "List of target pools contained in this scope.",
-     "items": {
-      "$ref": "TargetPool"
-     }
-    },
-    "warning": {
-     "type": "object",
-     "description": "Informational warning which replaces the list of addresses when the list is empty.",
-     "properties": {
-      "code": {
-       "type": "string",
-       "description": "The warning type identifier for this warning.",
-       "enum": [
-        "DEPRECATED_RESOURCE_USED",
-        "INJECTED_KERNELS_DEPRECATED",
-        "NEXT_HOP_ADDRESS_NOT_ASSIGNED",
-        "NEXT_HOP_CANNOT_IP_FORWARD",
-        "NEXT_HOP_INSTANCE_NOT_FOUND",
-        "NEXT_HOP_INSTANCE_NOT_ON_NETWORK",
-        "NEXT_HOP_NOT_RUNNING",
-        "NO_RESULTS_ON_PAGE",
-        "REQUIRED_TOS_AGREEMENT",
-        "UNREACHABLE"
-       ],
-       "enumDescriptions": [
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        ""
-       ]
-      },
-      "data": {
-       "type": "array",
-       "description": "Metadata for this warning in 'key: value' format.",
-       "items": {
-        "type": "object",
-        "properties": {
-         "key": {
-          "type": "string",
-          "description": "A key for the warning data."
-         },
-         "value": {
-          "type": "string",
-          "description": "A warning data value corresponding to the key."
-         }
-        }
-       }
-      },
-      "message": {
-       "type": "string",
-       "description": "Optional human-readable details for this warning."
-      }
-     }
-    }
-   }
-  },
   "TargetReference": {
    "id": "TargetReference",
    "type": "object",
    "properties": {
     "target": {
      "type": "string"
+    }
+   }
+  },
+  "TestFailure": {
+   "id": "TestFailure",
+   "type": "object",
+   "properties": {
+    "actualService": {
+     "type": "string"
+    },
+    "expectedService": {
+     "type": "string"
+    },
+    "host": {
+     "type": "string"
+    },
+    "path": {
+     "type": "string"
+    }
+   }
+  },
+  "UsageExportLocation": {
+   "id": "UsageExportLocation",
+   "type": "object",
+   "description": "The location in Cloud Storage and naming method of the daily usage report. Contains bucket_name and report_name prefix.",
+   "properties": {
+    "bucketName": {
+     "type": "string",
+     "description": "The name of an existing bucket in Cloud Storage where the usage report object is stored. The Google Service Account is granted write access to this bucket. This is simply the bucket name, with no \"gs://\" or \"https://storage.googleapis.com/\" in front of it."
+    },
+    "reportNamePrefix": {
+     "type": "string",
+     "description": "An optional prefix for the name of the usage report object stored in bucket_name. If not supplied, defaults to \"usage_\". The report is stored as a CSV file named _gce_.csv. where  is the day of the usage according to Pacific Time. The prefix should conform to Cloud Storage object naming conventions."
     }
    }
   },
@@ -3134,8 +2990,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -3189,7 +3045,6 @@
        "type": "string",
        "description": "Name of the region scoping this request.",
        "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
        "location": "path"
       }
      },
@@ -3229,7 +3084,6 @@
        "type": "string",
        "description": "Name of the region scoping this request.",
        "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
        "location": "path"
       }
      },
@@ -3263,7 +3117,6 @@
        "type": "string",
        "description": "Name of the region scoping this request.",
        "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
        "location": "path"
       }
      },
@@ -3294,8 +3147,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -3317,7 +3170,6 @@
        "type": "string",
        "description": "Name of the region scoping this request.",
        "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
        "location": "path"
       }
      },
@@ -3350,8 +3202,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -3388,7 +3240,7 @@
      "parameters": {
       "disk": {
        "type": "string",
-       "description": "Name of the persistent disk resource to delete.",
+       "description": "Name of the persistent disk resource to snapshot.",
        "required": true,
        "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
        "location": "path"
@@ -3557,8 +3409,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -3705,8 +3557,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -3823,8 +3675,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -3878,7 +3730,6 @@
        "type": "string",
        "description": "Name of the region scoping this request.",
        "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
        "location": "path"
       }
      },
@@ -3918,7 +3769,6 @@
        "type": "string",
        "description": "Name of the region scoping this request.",
        "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
        "location": "path"
       }
      },
@@ -3952,7 +3802,6 @@
        "type": "string",
        "description": "Name of the region scoping this request.",
        "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
        "location": "path"
       }
      },
@@ -3983,8 +3832,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -4006,7 +3855,6 @@
        "type": "string",
        "description": "Name of the region scoping this request.",
        "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
        "location": "path"
       }
      },
@@ -4046,7 +3894,6 @@
        "type": "string",
        "description": "Name of the region scoping this request.",
        "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
        "location": "path"
       }
      },
@@ -4082,8 +3929,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -4188,8 +4035,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -4328,8 +4175,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -4576,8 +4423,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -4673,8 +4520,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -5019,8 +4866,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -5090,6 +4937,61 @@
       "project",
       "zone",
       "instance"
+     ],
+     "response": {
+      "$ref": "Operation"
+     },
+     "scopes": [
+      "https://www.googleapis.com/auth/compute"
+     ]
+    },
+    "setDiskAutoDelete": {
+     "id": "compute.instances.setDiskAutoDelete",
+     "path": "{project}/zones/{zone}/instances/{instance}/setDiskAutoDelete",
+     "httpMethod": "POST",
+     "description": "Sets the auto-delete flag for a disk attached to an instance",
+     "parameters": {
+      "autoDelete": {
+       "type": "boolean",
+       "description": "Whether to auto-delete the disk when the instance is deleted.",
+       "required": true,
+       "location": "query"
+      },
+      "deviceName": {
+       "type": "string",
+       "description": "Disk device name to modify.",
+       "required": true,
+       "pattern": "\\w[\\w.-]{0,254}",
+       "location": "query"
+      },
+      "instance": {
+       "type": "string",
+       "description": "Instance name.",
+       "required": true,
+       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+       "location": "path"
+      },
+      "project": {
+       "type": "string",
+       "description": "Project name.",
+       "required": true,
+       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+       "location": "path"
+      },
+      "zone": {
+       "type": "string",
+       "description": "Name of the zone scoping this request.",
+       "required": true,
+       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+       "location": "path"
+      }
+     },
+     "parameterOrder": [
+      "project",
+      "zone",
+      "instance",
+      "autoDelete",
+      "deviceName"
      ],
      "response": {
       "$ref": "Operation"
@@ -5244,8 +5146,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -5329,8 +5231,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -5477,8 +5379,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -5592,7 +5494,6 @@
        "type": "string",
        "description": "Name of the region scoping this request.",
        "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
        "location": "path"
       }
      },
@@ -5629,7 +5530,6 @@
        "type": "string",
        "description": "Name of the zone scoping this request.",
        "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
        "location": "path"
       }
      },
@@ -5659,8 +5559,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -5682,7 +5582,6 @@
        "type": "string",
        "description": "Name of the region scoping this request.",
        "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
        "location": "path"
       }
      },
@@ -5719,7 +5618,6 @@
        "type": "string",
        "description": "Name of the region resource to return.",
        "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
        "location": "path"
       }
      },
@@ -5748,8 +5646,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -5888,8 +5786,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -6001,8 +5899,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -6030,487 +5928,6 @@
      "scopes": [
       "https://www.googleapis.com/auth/compute",
       "https://www.googleapis.com/auth/compute.readonly"
-     ]
-    }
-   }
-  },
-  "targetPools": {
-   "methods": {
-    "addHealthCheck": {
-     "id": "compute.targetPools.addHealthCheck",
-     "path": "{project}/regions/{region}/targetPools/{targetPool}/addHealthCheck",
-     "httpMethod": "POST",
-     "description": "Adds health check URL to targetPool.",
-     "parameters": {
-      "project": {
-       "type": "string",
-       "description": "Name of the project scoping this request.",
-       "required": true,
-       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
-       "location": "path"
-      },
-      "region": {
-       "type": "string",
-       "description": "Name of the region scoping this request.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      },
-      "targetPool": {
-       "type": "string",
-       "description": "Name of the TargetPool resource to which health_check_url is to be added.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      }
-     },
-     "parameterOrder": [
-      "project",
-      "region",
-      "targetPool"
-     ],
-     "request": {
-      "$ref": "TargetPoolsAddHealthCheckRequest"
-     },
-     "response": {
-      "$ref": "Operation"
-     },
-     "scopes": [
-      "https://www.googleapis.com/auth/compute"
-     ]
-    },
-    "addInstance": {
-     "id": "compute.targetPools.addInstance",
-     "path": "{project}/regions/{region}/targetPools/{targetPool}/addInstance",
-     "httpMethod": "POST",
-     "description": "Adds instance url to targetPool.",
-     "parameters": {
-      "project": {
-       "type": "string",
-       "description": "Name of the project scoping this request.",
-       "required": true,
-       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
-       "location": "path"
-      },
-      "region": {
-       "type": "string",
-       "description": "Name of the region scoping this request.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      },
-      "targetPool": {
-       "type": "string",
-       "description": "Name of the TargetPool resource to which instance_url is to be added.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      }
-     },
-     "parameterOrder": [
-      "project",
-      "region",
-      "targetPool"
-     ],
-     "request": {
-      "$ref": "TargetPoolsAddInstanceRequest"
-     },
-     "response": {
-      "$ref": "Operation"
-     },
-     "scopes": [
-      "https://www.googleapis.com/auth/compute"
-     ]
-    },
-    "aggregatedList": {
-     "id": "compute.targetPools.aggregatedList",
-     "path": "{project}/aggregated/targetPools",
-     "httpMethod": "GET",
-     "description": "Retrieves the list of target pools grouped by scope.",
-     "parameters": {
-      "filter": {
-       "type": "string",
-       "description": "Optional. Filter expression for filtering listed resources.",
-       "location": "query"
-      },
-      "maxResults": {
-       "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
-       "format": "uint32",
-       "minimum": "0",
-       "maximum": "500",
-       "location": "query"
-      },
-      "pageToken": {
-       "type": "string",
-       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
-       "location": "query"
-      },
-      "project": {
-       "type": "string",
-       "description": "Name of the project scoping this request.",
-       "required": true,
-       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
-       "location": "path"
-      }
-     },
-     "parameterOrder": [
-      "project"
-     ],
-     "response": {
-      "$ref": "TargetPoolAggregatedList"
-     },
-     "scopes": [
-      "https://www.googleapis.com/auth/compute",
-      "https://www.googleapis.com/auth/compute.readonly"
-     ]
-    },
-    "delete": {
-     "id": "compute.targetPools.delete",
-     "path": "{project}/regions/{region}/targetPools/{targetPool}",
-     "httpMethod": "DELETE",
-     "description": "Deletes the specified TargetPool resource.",
-     "parameters": {
-      "project": {
-       "type": "string",
-       "description": "Name of the project scoping this request.",
-       "required": true,
-       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
-       "location": "path"
-      },
-      "region": {
-       "type": "string",
-       "description": "Name of the region scoping this request.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      },
-      "targetPool": {
-       "type": "string",
-       "description": "Name of the TargetPool resource to delete.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      }
-     },
-     "parameterOrder": [
-      "project",
-      "region",
-      "targetPool"
-     ],
-     "response": {
-      "$ref": "Operation"
-     },
-     "scopes": [
-      "https://www.googleapis.com/auth/compute"
-     ]
-    },
-    "get": {
-     "id": "compute.targetPools.get",
-     "path": "{project}/regions/{region}/targetPools/{targetPool}",
-     "httpMethod": "GET",
-     "description": "Returns the specified TargetPool resource.",
-     "parameters": {
-      "project": {
-       "type": "string",
-       "description": "Name of the project scoping this request.",
-       "required": true,
-       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
-       "location": "path"
-      },
-      "region": {
-       "type": "string",
-       "description": "Name of the region scoping this request.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      },
-      "targetPool": {
-       "type": "string",
-       "description": "Name of the TargetPool resource to return.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      }
-     },
-     "parameterOrder": [
-      "project",
-      "region",
-      "targetPool"
-     ],
-     "response": {
-      "$ref": "TargetPool"
-     },
-     "scopes": [
-      "https://www.googleapis.com/auth/compute",
-      "https://www.googleapis.com/auth/compute.readonly"
-     ]
-    },
-    "getHealth": {
-     "id": "compute.targetPools.getHealth",
-     "path": "{project}/regions/{region}/targetPools/{targetPool}/getHealth",
-     "httpMethod": "POST",
-     "description": "Gets the most recent health check results for each IP for the given instance that is referenced by given TargetPool.",
-     "parameters": {
-      "project": {
-       "type": "string",
-       "description": "Name of the project scoping this request.",
-       "required": true,
-       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
-       "location": "path"
-      },
-      "region": {
-       "type": "string",
-       "description": "Name of the region scoping this request.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      },
-      "targetPool": {
-       "type": "string",
-       "description": "Name of the TargetPool resource to which the queried instance belongs.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      }
-     },
-     "parameterOrder": [
-      "project",
-      "region",
-      "targetPool"
-     ],
-     "request": {
-      "$ref": "InstanceReference"
-     },
-     "response": {
-      "$ref": "TargetPoolInstanceHealth"
-     },
-     "scopes": [
-      "https://www.googleapis.com/auth/compute",
-      "https://www.googleapis.com/auth/compute.readonly"
-     ]
-    },
-    "insert": {
-     "id": "compute.targetPools.insert",
-     "path": "{project}/regions/{region}/targetPools",
-     "httpMethod": "POST",
-     "description": "Creates a TargetPool resource in the specified project and region using the data included in the request.",
-     "parameters": {
-      "project": {
-       "type": "string",
-       "description": "Name of the project scoping this request.",
-       "required": true,
-       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
-       "location": "path"
-      },
-      "region": {
-       "type": "string",
-       "description": "Name of the region scoping this request.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      }
-     },
-     "parameterOrder": [
-      "project",
-      "region"
-     ],
-     "request": {
-      "$ref": "TargetPool"
-     },
-     "response": {
-      "$ref": "Operation"
-     },
-     "scopes": [
-      "https://www.googleapis.com/auth/compute"
-     ]
-    },
-    "list": {
-     "id": "compute.targetPools.list",
-     "path": "{project}/regions/{region}/targetPools",
-     "httpMethod": "GET",
-     "description": "Retrieves the list of TargetPool resources available to the specified project and region.",
-     "parameters": {
-      "filter": {
-       "type": "string",
-       "description": "Optional. Filter expression for filtering listed resources.",
-       "location": "query"
-      },
-      "maxResults": {
-       "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
-       "format": "uint32",
-       "minimum": "0",
-       "maximum": "500",
-       "location": "query"
-      },
-      "pageToken": {
-       "type": "string",
-       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
-       "location": "query"
-      },
-      "project": {
-       "type": "string",
-       "description": "Name of the project scoping this request.",
-       "required": true,
-       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
-       "location": "path"
-      },
-      "region": {
-       "type": "string",
-       "description": "Name of the region scoping this request.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      }
-     },
-     "parameterOrder": [
-      "project",
-      "region"
-     ],
-     "response": {
-      "$ref": "TargetPoolList"
-     },
-     "scopes": [
-      "https://www.googleapis.com/auth/compute",
-      "https://www.googleapis.com/auth/compute.readonly"
-     ]
-    },
-    "removeHealthCheck": {
-     "id": "compute.targetPools.removeHealthCheck",
-     "path": "{project}/regions/{region}/targetPools/{targetPool}/removeHealthCheck",
-     "httpMethod": "POST",
-     "description": "Removes health check URL from targetPool.",
-     "parameters": {
-      "project": {
-       "type": "string",
-       "description": "Name of the project scoping this request.",
-       "required": true,
-       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
-       "location": "path"
-      },
-      "region": {
-       "type": "string",
-       "description": "Name of the region scoping this request.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      },
-      "targetPool": {
-       "type": "string",
-       "description": "Name of the TargetPool resource to which health_check_url is to be removed.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      }
-     },
-     "parameterOrder": [
-      "project",
-      "region",
-      "targetPool"
-     ],
-     "request": {
-      "$ref": "TargetPoolsRemoveHealthCheckRequest"
-     },
-     "response": {
-      "$ref": "Operation"
-     },
-     "scopes": [
-      "https://www.googleapis.com/auth/compute"
-     ]
-    },
-    "removeInstance": {
-     "id": "compute.targetPools.removeInstance",
-     "path": "{project}/regions/{region}/targetPools/{targetPool}/removeInstance",
-     "httpMethod": "POST",
-     "description": "Removes instance URL from targetPool.",
-     "parameters": {
-      "project": {
-       "type": "string",
-       "description": "Name of the project scoping this request.",
-       "required": true,
-       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
-       "location": "path"
-      },
-      "region": {
-       "type": "string",
-       "description": "Name of the region scoping this request.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      },
-      "targetPool": {
-       "type": "string",
-       "description": "Name of the TargetPool resource to which instance_url is to be removed.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      }
-     },
-     "parameterOrder": [
-      "project",
-      "region",
-      "targetPool"
-     ],
-     "request": {
-      "$ref": "TargetPoolsRemoveInstanceRequest"
-     },
-     "response": {
-      "$ref": "Operation"
-     },
-     "scopes": [
-      "https://www.googleapis.com/auth/compute"
-     ]
-    },
-    "setBackup": {
-     "id": "compute.targetPools.setBackup",
-     "path": "{project}/regions/{region}/targetPools/{targetPool}/setBackup",
-     "httpMethod": "POST",
-     "description": "Changes backup pool configurations.",
-     "parameters": {
-      "failoverRatio": {
-       "type": "number",
-       "description": "New failoverRatio value for the containing target pool.",
-       "format": "float",
-       "location": "query"
-      },
-      "project": {
-       "type": "string",
-       "description": "Name of the project scoping this request.",
-       "required": true,
-       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
-       "location": "path"
-      },
-      "region": {
-       "type": "string",
-       "description": "Name of the region scoping this request.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      },
-      "targetPool": {
-       "type": "string",
-       "description": "Name of the TargetPool resource for which the backup is to be set.",
-       "required": true,
-       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
-       "location": "path"
-      }
-     },
-     "parameterOrder": [
-      "project",
-      "region",
-      "targetPool"
-     ],
-     "request": {
-      "$ref": "TargetReference"
-     },
-     "response": {
-      "$ref": "Operation"
-     },
-     "scopes": [
-      "https://www.googleapis.com/auth/compute"
      ]
     }
    }
@@ -6608,8 +6025,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",
@@ -6697,8 +6114,8 @@
       },
       "maxResults": {
        "type": "integer",
-       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 100.",
-       "default": "100",
+       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+       "default": "500",
        "format": "uint32",
        "minimum": "0",
        "maximum": "500",

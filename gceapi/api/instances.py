@@ -90,6 +90,9 @@ class Controller(gce_common.Controller):
                     "network '%(n)") % {"i": instance["name"], "n": network})
             result_dict["networkInterfaces"].append(ni)
 
+        # TODO(apavlov): add code to support returning ephemeral disks as
+        # SCRATCH disks. Such disk couldn't be created via GCE but it can
+        # present in OpenStack cloud.
         disk_index = 0
         for volume in instance["volumes"]:
             readonly = volume.get("metadata", {}).get("readonly", "False")
@@ -101,7 +104,8 @@ class Controller(gce_common.Controller):
                 "source": self._qualify(request,
                     "disks", volume["display_name"], scope),
                 "deviceName": volume["device_name"],
-                "boot": True if volume["bootable"] == "true" else False
+                "boot": True if volume["bootable"] == "true" else False,
+                "autoDelete": volume["auto_delete"]
             }
             result_dict["disks"].append(google_disk)
             disk_index += 1
@@ -142,7 +146,9 @@ class Controller(gce_common.Controller):
         operation_util.init_operation(context, "attachDisk",
                                       self._type_name, id, scope)
         self._instance_disk_api.add_item(context, id,
-            body["source"], body.get("deviceName"))
+            body.get("initializeParams"), body.get("source"),
+            body.get("deviceName"), body.get("autoDelete", False),
+            scope)
 
     def detach_disk(self, req, scope_id, id):
         context = self._get_context(req)
@@ -150,7 +156,16 @@ class Controller(gce_common.Controller):
         operation_util.init_operation(context, "detachDisk",
                                       self._type_name, id, scope)
         self._instance_disk_api.delete_item(context, id,
-            req.params.get('deviceName'))
+            req.params.get("deviceName"))
+
+    def set_disk_auto_delete(self, req, scope_id, id):
+        context = self._get_context(req)
+        scope = self._get_scope(req, scope_id)
+        operation_util.init_operation(context, "setDiskAutoDelete",
+                                      self._type_name, id, scope)
+        auto_delete = req.params.get("autoDelete").lower() == "true"
+        self._instance_disk_api.set_disk_auto_delete(context, id,
+            req.params.get("deviceName"), auto_delete)
 
 
 def create_resource():

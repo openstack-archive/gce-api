@@ -133,15 +133,17 @@ class API(base_api.API):
         try:
             image = image_service.get(image_id)
         except glanceclient_exc.HTTPNotFound:
-            return operation_api.gef_final_progress()
+            return operation_util.gef_final_progress()
         if image.status not in ["queued", "saving"]:
-            return operation_api.gef_final_progress(image.status == "killed")
+            return operation_util.gef_final_progress(image.status == "killed")
+        return None
 
     def _get_delete_item_progress(self, context, image_id):
         image_service = clients.glance(context).images
         try:
             image = image_service.get(image_id)
             if image.status in self._deleted_statuses:
-                return operation_api.gef_final_progress()
+                return operation_util.gef_final_progress()
         except glanceclient_exc.HTTPNotFound:
-            return operation_api.gef_final_progress()
+            return operation_util.gef_final_progress()
+        return None
