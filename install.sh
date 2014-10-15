@@ -246,7 +246,7 @@ sudo rm -f $AUTH_CACHE_DIR/*
 
 #install it
 echo Installing package
-sudo python setup.py install
+sudo python setup.py develop
 sudo rm -rf build gce_api.egg-info
 
 #recreate database

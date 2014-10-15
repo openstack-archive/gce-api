@@ -113,7 +113,7 @@ class API(base_api.API):
     def save_operation(self, context, operation, start_time,
                        get_progress_method, item_id, operation_result):
         if isinstance(operation_result, Exception):
-            operation.update(_error_from_exception(operation_result))
+            operation.update(self._error_from_exception(operation_result))
         operation["start_time"] = start_time
         method_key = self._method_keys.get(get_progress_method)
         if method_key is None or "error_code" in operation:
@@ -134,35 +134,16 @@ class API(base_api.API):
             # NOTE(ft): it may lead to hungup not finished operation in DB
             return
         if isinstance(operation_result, Exception):
-            operation.update(_error_from_exception(operation_result))
-        else:
+            operation.update(self._error_from_exception(operation_result))
+        elif operation_result:
             operation.update(operation_result)
         if operation["progress"] == 100 or "error_code" in operation:
             operation["status"] = "DONE"
             operation["end_time"] = timeutils.isotime(None, True)
-        operation.update(operation)
         self._update_db_item(context, operation)
 
-
-def gef_final_progress(with_error=False):
-    progress = {"progress": 100}
-    if with_error:
-        progress["error_code"] = 500
-        progress["error_message"] = _('Internal server error')
-        progress["errors"] = [{
-           "code": "UNKNOWN_OS_ERROR",
-           "message": _("Operation finished with unknown error. "
-                        "See OpenStack logs.")
-        }]
-    return progress
-
-
-def is_final_progress(progress):
-    return progress is not None and (progress.get("progress") == 100 or
-                                     progress.get("error_code") is not None)
-
-
-def _error_from_exception(ex):
-    return {"errors": [{"code": ex.__class__.__name__, "message": str(ex)}],
+    def _error_from_exception(self, ex):
+        return {
+            "errors": [{"code": ex.__class__.__name__, "message": str(ex)}],
             "error_code": 500,
             "error_message": _('Internal server error')}

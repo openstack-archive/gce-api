@@ -25,7 +25,7 @@ Gceapi API Server
 import eventlet
 import sys
 
-eventlet.patcher.monkey_patch(os=False)
+eventlet.patcher.monkey_patch(os=False, thread=False)
 
 from oslo.config import cfg
 
