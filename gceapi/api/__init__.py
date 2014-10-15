@@ -144,6 +144,11 @@ class APIRouter(wsgi.Router):
                 controller=self.resources['instances'],
                 action="detach_disk",
                 conditions={"method": ["POST"]})
+        mapper.connect("/{project_id}/zones/{scope_id}/instances/{id}/"
+                       "setDiskAutoDelete",
+                controller=self.resources['instances'],
+                action="set_disk_auto_delete",
+                conditions={"method": ["POST"]})
 
         mapper.resource("images", "global/images",
                 controller=self.resources['images'])
