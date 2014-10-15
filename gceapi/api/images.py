@@ -34,7 +34,9 @@ class Controller(gce_common.Controller):
             },
             "status": image["status"],
             "archiveSizeBytes": image["size"],
-            "description": image.get("description", "")
+            "description": image.get("description", ""),
+            # NOTE(apavlov): Size of the image when restored onto a disk.
+            #"diskSizeGb": 0
         }
 
         return self._format_item(request, result_dict, scope)
