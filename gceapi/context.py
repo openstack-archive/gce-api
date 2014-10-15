@@ -90,6 +90,7 @@ class RequestContext(object):
         self.operation_start_time = None
         self.operation_get_progress_method = None
         self.operation_item_id = None
+        self.operation_data = {}
 
     def _get_read_deleted(self):
         return self._read_deleted
