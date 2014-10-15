@@ -13,10 +13,12 @@
 #    under the License.
 
 import string
+import time
 
 from gceapi.api import base_api
 from gceapi.api import clients
 from gceapi.api import disk_api
+from gceapi.api import image_api
 from gceapi.api import operation_api
 from gceapi.api import operation_util
 from gceapi.api import utils
@@ -26,12 +28,15 @@ from gceapi.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 
+GB = 1024 ** 3
+
 
 class API(base_api.API):
     """GCE Attached disk API."""
 
     KIND = "attached_disk"
-    PERSISTENT_ATTRIBUTES = ["id", "instance_name", "volume_id", "name"]
+    PERSISTENT_ATTRIBUTES = ["id", "instance_name", "volume_id", "name",
+                             "auto_delete"]
 
     def __init__(self, *args, **kwargs):
         super(API, self).__init__(*args, **kwargs)
@@ -58,18 +63,16 @@ class API(base_api.API):
 
     def get_items(self, context, instance_name):
         items = self._get_db_items(context)
+        for item in items:
+            item.setdefault("auto_delete", False)
         return [i for i in items if i["instance_name"] == instance_name]
 
-    def add_item(self, context, instance_name, source, name):
+    def add_item(self, context, instance_name, params, source, name,
+                 auto_delete, scope):
+        # NOTE(apavlov): name is a 'device_name' here
         if not name:
             msg = _("There is no name to assign.")
             raise exception.InvalidRequest(msg)
-
-        volume_name = utils._extract_name_from_url(source)
-        if not volume_name:
-            msg = _("There is no volume to assign.")
-            raise exception.NotFound(msg)
-        volume = disk_api.API().get_item(context, volume_name, None)
 
         nova_client = clients.nova(context)
         instances = nova_client.servers.list(
@@ -93,14 +96,44 @@ class API(base_api.API):
         else:
             raise exception.OverQuota
 
-        operation_util.start_operation(context, self._get_add_item_progress)
-        volumes_client.create_server_volume(
-            instance.id, volume["id"], "/dev/" + device_name)
+        volume_id = None
+        if source:
+            volume_name = utils._extract_name_from_url(source)
+            if not volume_name:
+                msg = _("There is no volume to assign.")
+                raise exception.NotFound(msg)
+            volume = disk_api.API().get_item(context, volume_name, scope)
+            volume_id = volume["id"]
+        elif not params:
+            msg = _('Disk config must contains either "source" or '
+                    '"initializeParams".')
+            raise exception.InvalidRequest(msg)
 
-        item = self.register_item(context, instance_name, volume["id"], name)
+        try:
+            # TODO: rework with continue_operation
+            operation_util.start_operation(context,
+                                           self._get_add_item_progress)
+            if params:
+                volume_id = self.create(context, instance_name, params, scope)
+            volumes_client.create_server_volume(
+                instance.id, volume_id, "/dev/" + device_name)
+        except:
+            # TODO: log and reraise
+            if params and volume_id:
+                try:
+                    cinder_client = clients.cinder(context)
+                    volume = cinder_client.volumes.get(volume_id)
+                    cinder_client.volumes.delete(volume)
+                except:
+                    # TODO: log
+                    pass
+
+        item = self.register_item(context, instance_name, volume_id, name,
+                                  auto_delete)
         operation_util.set_item_id(context, item["id"])
 
-    def register_item(self, context, instance_name, volume_id, name):
+    def register_item(self, context, instance_name, volume_id, name,
+                      auto_delete):
         if not name:
             msg = _("There is no name to assign.")
             raise exception.InvalidRequest(msg)
@@ -113,6 +146,7 @@ class API(base_api.API):
             "instance_name": instance_name,
             "volume_id": volume_id,
             "name": name,
+            "auto_delete": auto_delete
         }
         new_item = self._add_db_item(context, new_item)
         return new_item
@@ -135,12 +169,40 @@ class API(base_api.API):
 
         self._delete_db_item(context, item)
 
+    def set_disk_auto_delete(self, context, instance_name, name, auto_delete):
+        item = self.get_item(context, instance_name, name)
+        item["auto_delete"] = auto_delete
+        self._update_db_item(context, item)
+
     def unregister_item(self, context, instance_name, name):
         item = self.get_item(context, instance_name, name)
         self._delete_db_item(context, item)
 
+    def create(self, context, name, params, scope):
+        """Creates volume and returns id of new volume"""
+        volume_name = params.get("diskName", name)
+        sizeGb = params.get("diskSizeGb")
+        sizeGb = int(sizeGb) if sizeGb else None
+
+        image_name = utils._extract_name_from_url(params["sourceImage"])
+        image = image_api.API().get_item(context, image_name, scope)
+        image_id = image['id']
+        # Cinder API doesn't get size from image, so we do this
+        image_size_in_gb = (int(image['size']) + GB - 1) / GB
+        if not sizeGb or sizeGb < image_size_in_gb:
+            sizeGb = image_size_in_gb
+
+        client = clients.cinder(context)
+        volume = client.volumes.create(
+            sizeGb,
+            display_name=volume_name,
+            imageRef=image_id,
+            availability_zone=scope.get_name())
+
+        return volume.id
+
     def _get_add_item_progress(self, context, dummy_id):
-        return operation_api.gef_final_progress()
+        return operation_util.gef_final_progress()
 
     def _get_delete_item_progress(self, context, dummy_id):
-        return operation_api.gef_final_progress()
+        return operation_util.gef_final_progress()

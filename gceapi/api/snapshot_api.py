@@ -99,15 +99,17 @@ class API(base_api.API):
         try:
             snapshot = client.volume_snapshots.get(snapshot_id)
         except clients.cinderclient.exceptions.NotFound:
-            return operation_api.gef_final_progress()
+            return operation_util.gef_final_progress()
         if (snapshot.status != "creating"):
-            return operation_api.gef_final_progress(snapshot.status == "error")
+            return operation_util.gef_final_progress(snapshot.status == "error")
+        return None
 
     def _get_delete_item_progress(self, context, snapshot_id):
         client = clients.cinder(context)
         try:
             snapshot = client.volume_snapshots.get(snapshot_id)
         except clients.cinderclient.exceptions.NotFound:
-            return operation_api.gef_final_progress()
+            return operation_util.gef_final_progress()
         if snapshot.status not in ["deleting", "deleted"]:
-            return operation_api.gef_final_progress(True)
+            return operation_util.gef_final_progress(True)
+        return None
