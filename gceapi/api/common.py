@@ -64,7 +64,7 @@ class Controller(object):
 
     def process_result(self, request, action, action_result):
         context = self._get_context(request)
-        operation = operation_util.save_operaton(context, action_result)
+        operation = operation_util.save_operation(context, action_result)
         if operation is not None:
             scope = self._operation_api.get_scopes(context, operation)[0]
             action_result = self._format_operation(request, operation, scope)

@@ -76,12 +76,6 @@ class API(base_api.API):
             base_api._callback_reasons.pre_delete,
             self._remove_secgroup_from_instances)
         operation_api.API().register_get_progress_method(
-                "instance-add",
-                self._get_add_item_progress)
-        operation_api.API().register_get_progress_method(
-                "instance-delete",
-                self._get_delete_item_progress)
-        operation_api.API().register_get_progress_method(
                 "instance-reset",
                 self._get_reset_instance_progress)
 
@@ -140,8 +134,9 @@ class API(base_api.API):
             if not ad:
                 name = volume["display_name"]
                 ad = instance_disk_api.API().register_item(context,
-                    instance["name"], volume["id"], name)
+                    instance["name"], volume["id"], name, False)
             volume["device_name"] = ad["name"]
+            volume["auto_delete"] = ad["auto_delete"]
         # NOTE(apavlov): cleanup unused from db for this instance
         for ad in ads:
             ad = instance_disk_api.API().unregister_item(context,
@@ -231,9 +226,19 @@ class API(base_api.API):
         if not instances or len(instances) != 1:
             raise exception.NotFound
         instance = instances[0]
-        operation_util.start_operation(context,
-                                       self._get_delete_item_progress,
-                                       instance.id)
+        operation_util.start_operation(
+            context, base_api.API._get_complex_operation_progress)
+
+        ads = instance_disk_api.API().get_items(context, instance.name)
+        disks_to_delete = []
+        for ad in ads:
+            if ad["auto_delete"]:
+                disks_to_delete.append(ad)
+
+        if not disks_to_delete:
+            operation_util.set_item_id(context, instance.id, self.KIND)
+
+        client = clients.nova(context)
         instance.delete()
         instance = utils.to_dict(instance)
         instance = self._prepare_instance(client, context, instance)
@@ -249,6 +254,56 @@ class API(base_api.API):
             ac = instance_address_api.API().unregister_item(context,
                 instance["name"], ac["name"])
 
+        if not disks_to_delete:
+            return
+
+        context.operation_data["scope"] = scope
+        context.operation_data["count"] = 1 + len(disks_to_delete)
+        context.operation_data["instance"] = instance
+        context.operation_data["disks"] = disks_to_delete
+        operation_util.continue_operation(
+            context, lambda: self._delete_instance(context))
+
+    def _delete_instance(self, context):
+        progress = {"progress": 0}
+        full_count = context.operation_data.get("count")
+        disks = context.operation_data.get("disks")
+        instance = context.operation_data.get("instance")
+        if instance:
+            item_progress = self._get_delete_item_progress(context,
+                                                           instance["id"])
+            if not operation_util.is_final_progress(item_progress):
+                return progress
+            context.operation_data.pop("instance")
+
+        progress = {"progress": int(100.0 * (full_count - len(disks))
+                                    / full_count)}
+
+        disk = context.operation_data.get("disk")
+        if disk:
+            volume_id = disk["volume_id"]
+            item_progress = disk_api.API()._get_delete_item_progress(context,
+                                                                     volume_id)
+            if not operation_util.is_final_progress(item_progress):
+                return progress
+            context.operation_data.pop("disk")
+            progress = {"progress": int(100.0 * (full_count - len(disks) + 1)
+                                        / full_count)}
+
+        if disks:
+            disk = disks.pop()
+            try:
+                cinder_client = clients.cinder(context)
+                volume = cinder_client.volumes.get(disk["volume_id"])
+                cinder_client.volumes.delete(volume)
+                context.operation_data["disk"] = disk
+            except Exception:
+                LOG.exception("Failed to remove disk %s of instance" %
+                              disk["volume_id"])
+            return progress
+
+        return operation_util.get_final_progress()
+
     def add_item(self, context, name, body, scope=None):
         name = body['name']
         client = clients.nova(context)
@@ -256,18 +311,6 @@ class API(base_api.API):
         flavor_name = utils._extract_name_from_url(body['machineType'])
         flavor_id = machine_type_api.API().get_item(
             context, flavor_name, scope)["id"]
-
-        disks = body.get('disks', [])
-        disks.sort(None, lambda x: x.get("boot", False), True)
-        bdm = dict()
-        diskDevice = 0
-        for disk in disks:
-            device_name = "vd" + string.ascii_lowercase[diskDevice]
-            volume_name = utils._extract_name_from_url(disk["source"])
-            volume = disk_api.API().get_item(context, volume_name, scope)
-            disk["id"] = volume["id"]
-            bdm[device_name] = volume["id"]
-            diskDevice += 1
 
         nics = []
         #NOTE(ft) 'default' security group contains output rules
@@ -299,6 +342,19 @@ class API(base_api.API):
             metadatas = []
         instance_metadata = dict([(x['key'], x['value']) for x in metadatas])
 
+        disks = body.get('disks', [])
+        for disk in disks:
+            disk["boot"] = True if "initializeParams" in disk else False
+            if "source" in disk:
+                volume_name = utils._extract_name_from_url(disk["source"])
+                volume = disk_api.API().get_item(context, volume_name, scope)
+                disk["id"] = volume["id"]
+            elif "initializeParams" not in disk:
+                msg = _('Disk config must contain either "source" or '
+                        '"initializeParams".')
+                raise exception.InvalidRequest(msg)
+        disks.sort(None, lambda x: x.get("boot", False), True)
+
         ssh_keys = instance_metadata.pop('sshKeys', None)
         if ssh_keys is not None:
             key = ssh_keys.split('\n')[0].split(":")
@@ -308,79 +364,139 @@ class API(base_api.API):
         else:
             key_name = project_api.API().get_gce_user_keypair_name(context)
 
-        try:
-            operation_util.start_operation(
-                context, self._get_add_item_progress)
-            instance = client.servers.create(name, None, flavor_id,
-                meta=instance_metadata, min_count=1, max_count=1,
-                security_groups=groups_names, key_name=key_name,
-                availability_zone=scope.get_name(), block_device_mapping=bdm,
-                nics=nics)
-            if not acs:
-                operation_util.set_item_id(context, instance.id)
-        finally:
-            if ssh_keys is not None:
-                client.keypairs.delete(key_name)
+        operation_util.start_operation(
+            context, base_api.API._get_complex_operation_progress)
 
-        for disk in disks:
-            instance_disk_api.API().register_item(context, name,
-                disk["id"], disk["deviceName"])
+        context.operation_data["acs"] = acs
+        context.operation_data["ssh_keys"] = ssh_keys
 
-        instance = utils.to_dict(client.servers.get(instance.id))
-        instance = self._prepare_instance(client, context, instance)
-        if "description" in body:
-            instance["description"] = body["description"]
-        instance = self._add_db_item(context, instance)
+        context.operation_data["bdm"] = dict()
+        context.operation_data["disk_device"] = 0
+        context.operation_data["disks"] = disks
 
-        if acs:
-            operation_util.continue_operation(
-                    context,
-                    lambda: self._add_access_config(context, instance,
-                                                    scope, acs))
+        context.operation_data["scope"] = scope
+        context.operation_data["args"] = [name, None, flavor_id]
+        context.operation_data["kwargs"] = {"meta": instance_metadata,
+            "min_count": 1, "max_count": 1, "nics": nics,
+            "security_groups": groups_names, "key_name": key_name}
+        context.operation_data["description"] = body.get("description")
 
-        return instance
+        operation_util.continue_operation(
+            context, lambda: self._create_instance(context))
 
-    def _add_access_config(self, context, instance, scope, acs):
+    def _create_instance(self, context):
+        disks = context.operation_data["disks"]
+        acs = context.operation_data["acs"]
+        full_count = 1 + len(disks) + (1 if acs else 0)
+        disk_device = context.operation_data["disk_device"]
+        instance = context.operation_data.get("instance")
+        progress = {"progress": int(100.0 * disk_device / full_count)}
+
+        disk_device = context.operation_data["disk_device"]
+        disk = context.operation_data.get("disk")
+        if disk:
+            volume_id = disk["id"]
+            item_progress = disk_api.API()._get_add_item_progress(context,
+                                                                  volume_id)
+            if not operation_util.is_final_progress(item_progress):
+                return progress
+            context.operation_data.pop("disk")
+            disk_device += 1
+            context.operation_data["disk_device"] = disk_device
+            progress["progress"] = int(100.0 * disk_device / full_count)
+
+        scope = context.operation_data["scope"]
+        args = context.operation_data["args"]
+
+        bdm = context.operation_data["bdm"]
+        while disk_device < len(disks):
+            disk = disks[disk_device]
+            if "initializeParams" in disk:
+                da = disk_api.API()
+                params = disk["initializeParams"]
+                body = {"sizeGb": params.get("diskSizeGb"),
+                        "sourceImage": params["sourceImage"]}
+                volume = da.add_item(context, params.get("diskName", args[0]),
+                                     body, scope=scope)
+                disk["id"] = volume["id"]
+                context.operation_data["disk"] = disk
+            device_name = "vd" + string.ascii_lowercase[disk_device]
+            bdm[device_name] = disk["id"]
+            if "initializeParams" in disk:
+                return progress
+            disk_device += 1
+            context.operation_data["disk_device"] = disk_device
+
+        if not instance:
+            kwargs = context.operation_data["kwargs"]
+            kwargs["block_device_mapping"] = bdm
+            kwargs["availability_zone"] = scope.get_name()
+            client = clients.nova(context)
+            try:
+                instance = client.servers.create(*args, **kwargs)
+
+                for disk in disks:
+                    instance_disk_api.API().register_item(context, args[0],
+                        disk["id"], disk["deviceName"], disk["autoDelete"])
+
+                instance = utils.to_dict(client.servers.get(instance.id))
+                instance = self._prepare_instance(client, context, instance)
+                instance["description"] = context.operation_data["description"]
+                instance = self._add_db_item(context, instance)
+            finally:
+                try:
+                    ssh_keys = context.operation_data["ssh_keys"]
+                    if ssh_keys is not None:
+                        client.keypairs.delete(kwargs["key_name"])
+                except Exception:
+                    pass
+            context.operation_data["instance"] = instance
+            return progress
+
         progress = self._get_add_item_progress(context, instance["id"])
-        if progress is None or not operation_api.is_final_progress(progress):
+        if not operation_util.is_final_progress(progress):
             return progress
 
         client = clients.nova(context)
         try:
             instance = client.servers.get(instance["id"])
         except clients.novaclient.exceptions.NotFound:
-            return operation_api.gef_final_progress()
+            return operation_util.get_final_progress()
 
         for net in acs:
             ac = acs[net]
             instance_address_api.API().add_item(context, instance.name,
                 net, ac.get("natIP"), ac.get("type"), ac.get("name"))
-        return operation_api.gef_final_progress()
+        return operation_util.get_final_progress()
 
     def _get_add_item_progress(self, context, instance_id):
         client = clients.nova(context)
         try:
             instance = client.servers.get(instance_id)
         except clients.novaclient.exceptions.NotFound:
-            return operation_api.gef_final_progress()
+            return operation_util.get_final_progress()
         if instance.status != "BUILD":
-            return operation_api.gef_final_progress(instance.status == "ERROR")
+            return operation_util.get_final_progress(instance.status
+                                                     == "ERROR")
+        return None
 
     def _get_delete_item_progress(self, context, instance_id):
         client = clients.nova(context)
         try:
             instance = client.servers.get(instance_id)
         except clients.novaclient.exceptions.NotFound:
-            return operation_api.gef_final_progress()
+            return operation_util.get_final_progress()
         if getattr(instance, "OS-EXT-STS:task_state") != "deleting":
-            return operation_api.gef_final_progress(
+            return operation_util.get_final_progress(
                     instance.status != "DELETED")
+        return None
 
     def _get_reset_instance_progress(self, context, instance_id):
         client = clients.nova(context)
         try:
             instance = client.servers.get(instance_id)
         except clients.novaclient.exceptions.NotFound:
-            return operation_api.gef_final_progress()
+            return operation_util.get_final_progress()
         if instance.status != "HARD_REBOOT":
-            return operation_api.gef_final_progress()
+            return operation_util.get_final_progress()
+        return None

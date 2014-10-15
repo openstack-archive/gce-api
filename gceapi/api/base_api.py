@@ -149,6 +149,10 @@ class API(object):
 
         self._callbacks.append((reason, func))
 
+    @classmethod
+    def _get_complex_operation_progress(cls, context, item_id):
+        return None
+
     def _prepare_item(self, item, db_item):
         if db_item is not None:
             item.update(db_item)
@@ -160,7 +164,7 @@ class API(object):
                    if key in item)
         if ("creationTimestamp" in self._get_persistent_attributes() and
                 "creationTimestamp" not in db_item):
-            # TODO(ft): Google not returns microseconds but returns
+            # TODO(ft): Google doesn't return microseconds but returns
             # server time zone: 2013-12-06T03:34:31.340-08:00
             utcnow = timeutils.isotime(None, True)
             db_item["creationTimestamp"] = utcnow

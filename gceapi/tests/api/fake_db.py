@@ -109,7 +109,7 @@ ITEMS = [
         "scope_name": "nova",
         "target_type": "instance",
         "target_name": "i1",
-        "method_key": "instance-add",
+        "method_key": "complex_operation",
         "item_id": "d6957005-3ce7-4727-91d2-ae37fe5a199a",
     },
     {
@@ -126,7 +126,7 @@ ITEMS = [
         "scope_name": "nova",
         "target_type": "instance",
         "target_name": "i-deleted",
-        "method_key": "instance-delete",
+        "method_key": "complex_operation",
         "item_id": "a6d176c9-389b-4a68-94f2-92a4cc276124",
     },
     {

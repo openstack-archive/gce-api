@@ -16,7 +16,7 @@ from gceapi.api import operations
 from gceapi.tests.api import common
 
 FAKE_ADD_INSTANCE = {
-    u'status': u'DONE',
+    u'status': u'RUNNING',
     u'kind': u'compute#operation',
     u'operationType': u'add',
     u'zone': (u'http://localhost/compute/v1beta15/projects/'
@@ -27,8 +27,7 @@ FAKE_ADD_INSTANCE = {
     u'targetLink': (u'http://localhost/compute/v1beta15/projects/'
                     'fake_project/zones/nova/instances/i1'),
     u'insertTime': u'2014-01-20T11:17:39.735738Z',
-    u'progress': 100,
-    u'endTime': u'2013-12-27T08:46:34.684354Z',
+    u'progress': 0,
     u'id': u'2720525776854968247',
     u'selfLink': (u'http://localhost/compute/v1beta15/projects/'
                   'fake_project/zones/nova/operations/'
@@ -36,7 +35,7 @@ FAKE_ADD_INSTANCE = {
     u'user': u'admin'
 }
 FAKE_DELETE_INSTANCE = {
-    u'status': u'DONE',
+    u'status': u'RUNNING',
     u'kind': u'compute#operation',
     u'operationType': u'delete',
     u'zone': (u'http://localhost/compute/v1beta15/projects/'
@@ -47,8 +46,7 @@ FAKE_DELETE_INSTANCE = {
     u'targetLink': (u'http://localhost/compute/v1beta15/projects/'
                     'fake_project/zones/nova/instances/i-deleted'),
     u'insertTime': u'2014-01-20T11:17:39.735738Z',
-    u'progress': 100,
-    u'endTime': u'2013-12-27T08:46:34.684354Z',
+    u'progress': 0,
     u'id': u'5384375190177147022',
     u'selfLink': (u'http://localhost/compute/v1beta15/projects/'
                   'fake_project/zones/nova/operations/'
