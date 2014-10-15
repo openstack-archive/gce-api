@@ -107,7 +107,8 @@ class API(base_api.API):
         client.delete(volumes[0])
 
     def add_item(self, context, name, body, scope=None):
-        sizeGb = int(body['sizeGb']) if 'sizeGb' in body else None
+        sizeGb = body.get("sizeGb")
+        sizeGb = int(sizeGb) if sizeGb else None
 
         snapshot_uri = body.get("sourceSnapshot")
         image_uri = body.get("sourceImage")
@@ -134,7 +135,7 @@ class API(base_api.API):
         operation_util.start_operation(context, self._get_add_item_progress)
         volume = client.volumes.create(
             sizeGb, snapshot_id=snapshot_id,
-            display_name=body.get('name'),
+            display_name=body.get('name', name),
             display_description=body.get('description'),
             imageRef=image_id,
             availability_zone=scope.get_name())
@@ -147,15 +148,17 @@ class API(base_api.API):
         try:
             volume = client.volumes.get(volume_id)
         except clients.cinderclient.exceptions.NotFound:
-            return operation_api.gef_final_progress()
+            return operation_util.gef_final_progress()
         if (volume.status not in ["creating", "downloading"]):
-            return operation_api.gef_final_progress(volume.status == "error")
+            return operation_util.gef_final_progress(volume.status == "error")
+        return None
 
     def _get_delete_item_progress(self, context, volume_id):
         client = clients.cinder(context)
         try:
             volume = client.volumes.get(volume_id)
         except clients.cinderclient.exceptions.NotFound:
-            return operation_api.gef_final_progress()
+            return operation_util.gef_final_progress()
         if volume.status not in ["deleting", "deleted"]:
-            return operation_api.gef_final_progress(True)
+            return operation_util.gef_final_progress(True)
+        return None
