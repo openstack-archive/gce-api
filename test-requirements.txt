@@ -6,7 +6,6 @@ hacking>=0.8.0,<0.9
 mox>=0.5.3
 mock>=1.0
 oslo.sphinx
-psycopg2
 pylint==0.25.2
 python-subunit>=0.0.18
 sphinx>=1.1.2,<1.2
