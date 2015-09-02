@@ -14,14 +14,15 @@
 
 import copy
 
+from oslo_log import log as logging
+
 from gceapi.api import base_api
 from gceapi.api import clients
 from gceapi.api import network_api
 from gceapi.api import operation_util
 from gceapi.api import utils
 from gceapi import exception
-from gceapi.openstack.common.gettextutils import _
-from gceapi.openstack.common import log as logging
+from gceapi.i18n import _
 
 
 PROTOCOL_MAP = {
@@ -175,8 +176,8 @@ class API(base_api.API):
         if not too_complex_for_gce:
             sourceRanges = [cidr for cidr in grouped_rules] or ["0.0.0.0/0"]
             if common_rules:
-                allowed = [_build_gce_port_rule(proto, common_rules[proto])
-                           for proto in common_rules]
+                allowed = [_build_gce_port_rule(p, common_rules[p])
+                           for p in common_rules]
         firewall["sourceRanges"] = sourceRanges
         firewall["allowed"] = allowed
 

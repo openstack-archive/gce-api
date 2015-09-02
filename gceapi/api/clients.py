@@ -16,10 +16,10 @@
 from keystoneclient.v2_0 import client as kc
 from novaclient import client as novaclient
 from novaclient import shell as novashell
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
 
-from gceapi.openstack.common.gettextutils import _
-from gceapi.openstack.common import log as logging
+from gceapi.i18n import _
 
 logger = logging.getLogger(__name__)
 

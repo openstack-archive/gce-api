@@ -21,13 +21,13 @@ import re
 import routes
 import time
 
+from oslo_log import log as logging
+from oslo_serialization import jsonutils
 import webob
 
 from gceapi import exception
-from gceapi.openstack.common import gettextutils
-from gceapi.openstack.common.gettextutils import _
-from gceapi.openstack.common import jsonutils
-from gceapi.openstack.common import log as logging
+from gceapi import i18n
+from gceapi.i18n import _
 from gceapi import wsgi
 
 
@@ -201,7 +201,7 @@ class Request(webob.Request):
         if not self.accept_language:
             return None
         return self.accept_language.best_match(
-                gettextutils.get_available_languages('gceapi'))
+                i18n.get_available_languages('gceapi'))
 
 
 class ActionDispatcher(object):
@@ -714,7 +714,7 @@ class Fault(webob.exc.HTTPException):
         LOG.debug(_("Returning %(code)s to user: %(explanation)s"),
                   {'code': code, 'explanation': explanation})
 
-        explanation = gettextutils.translate(explanation, user_locale)
+        explanation = i18n.translate(explanation, user_locale)
         fault_data = {
             fault_name: {
                 'code': code,
@@ -779,11 +779,11 @@ class RateLimitFault(webob.exc.HTTPException):
         metadata = {"attributes": {"overLimit": ["code", "retryAfter"]}}
 
         self.content['overLimit']['message'] = \
-                gettextutils.translate(
+                i18n.translate(
                         self.content['overLimit']['message'],
                         user_locale)
         self.content['overLimit']['details'] = \
-                gettextutils.translate(
+                i18n.translate(
                         self.content['overLimit']['details'],
                         user_locale)
 

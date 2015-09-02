@@ -19,12 +19,12 @@ import uuid
 
 from keystoneclient import exceptions
 from keystoneclient.v2_0 import client as keystone_client
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
+from oslo_utils import timeutils
 import webob
 
-from gceapi.openstack.common.gettextutils import _
-from gceapi.openstack.common import log as logging
-from gceapi.openstack.common import timeutils
+from gceapi.i18n import _
 from gceapi import wsgi_ext as openstack_wsgi
 
 FLAGS = cfg.CONF
