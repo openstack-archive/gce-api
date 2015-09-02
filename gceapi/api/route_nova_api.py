@@ -14,7 +14,7 @@
 
 from gceapi.api import base_api
 from gceapi import exception
-from gceapi.openstack.common.gettextutils import _
+from gceapi.i18n import _
 
 
 NOT_SUPPORTED_MESSAGE = _("Routes are not supported with nova network")

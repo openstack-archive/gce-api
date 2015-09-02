@@ -15,6 +15,8 @@
 import random
 import string
 
+from oslo_log import log as logging
+
 from gceapi.api import base_api
 from gceapi.api import clients
 from gceapi.api import disk_api
@@ -29,8 +31,7 @@ from gceapi.api import project_api
 from gceapi.api import scopes
 from gceapi.api import utils
 from gceapi import exception
-from gceapi.openstack.common.gettextutils import _
-from gceapi.openstack.common import log as logging
+from gceapi.i18n import _
 
 LOG = logging.getLogger(__name__)
 

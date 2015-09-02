@@ -18,10 +18,10 @@ import threading
 import webob
 
 from keystoneclient.v2_0 import client as keystone_client
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
 
 from gceapi.api import clients
-from gceapi.openstack.common import log as logging
 from gceapi import wsgi_ext as openstack_wsgi
 
 LOG = logging.getLogger(__name__)
