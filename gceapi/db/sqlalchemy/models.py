@@ -16,10 +16,9 @@
 SQLAlchemy models for gceapi data.
 """
 
+from oslo_db.sqlalchemy import models
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Index, PrimaryKeyConstraint, String, Text
-
-from gceapi.openstack.common.db.sqlalchemy import models
 
 BASE = declarative_base()
 

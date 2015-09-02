@@ -21,11 +21,12 @@
 
 import os.path
 import socket
-import sys
 
 import eventlet.wsgi
 import greenlet
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
+from oslo_utils import excutils
 from paste import deploy
 import routes.middleware
 import ssl
@@ -33,9 +34,8 @@ import webob.dec
 import webob.exc
 
 from gceapi import exception
-from gceapi.openstack.common import excutils
-from gceapi.openstack.common.gettextutils import _
-from gceapi.openstack.common import log as logging
+from gceapi.i18n import _
+
 
 wsgi_opts = [
     cfg.StrOpt('api_paste_config',
@@ -95,7 +95,6 @@ class Server(object):
         self._protocol = protocol
         self._pool = eventlet.GreenPool(pool_size or self.default_pool_size)
         self._logger = logging.getLogger("gceapi.%s.wsgi.server" % self.name)
-        self._wsgi_logger = logging.WritableLogger(self._logger)
         self._use_ssl = use_ssl
         self._max_url_len = max_url_len
 
@@ -186,7 +185,6 @@ class Server(object):
             'site': self.app,
             'protocol': self._protocol,
             'custom_pool': self._pool,
-            'log': self._wsgi_logger,
             'log_format': CONF.wsgi_log_format
             }
 
@@ -355,42 +353,6 @@ class Middleware(Application):
             return response
         response = req.get_response(self.application)
         return self.process_response(response)
-
-
-class Debug(Middleware):
-    """Helper class for debugging a WSGI application.
-
-    Can be inserted into any WSGI application chain to get information
-    about the request and response.
-
-    """
-
-    @webob.dec.wsgify(RequestClass=Request)
-    def __call__(self, req):
-        print(('*' * 40) + ' REQUEST ENVIRON')
-        for key, value in req.environ.items():
-            print(key, '=', value)
-        print()
-        resp = req.get_response(self.application)
-
-        print(('*' * 40) + ' RESPONSE HEADERS')
-        for (key, value) in resp.headers.iteritems():
-            print(key, '=', value)
-        print()
-
-        resp.app_iter = self.print_generator(resp.app_iter)
-
-        return resp
-
-    @staticmethod
-    def print_generator(app_iter):
-        """Iterator that prints the contents of a wrapper string."""
-        print ('*' * 40) + ' BODY'
-        for part in app_iter:
-            sys.stdout.write(part)
-            sys.stdout.flush()
-            yield part
-        print
 
 
 class Router(object):

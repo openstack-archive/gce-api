@@ -16,21 +16,21 @@
 
 from __future__ import print_function
 
+import copy
 import errno
 import gc
+import logging
 import os
 import pprint
 import socket
 import sys
 import traceback
 
-import eventlet
 import eventlet.backdoor
 import greenlet
-from oslo.config import cfg
+from oslo_config import cfg
 
-from gceapi.openstack.common.gettextutils import _
-from gceapi.openstack.common import log as logging
+from gceapi.openstack.common._i18n import _LI
 
 help_for_backdoor_port = (
     "Acceptable values are 0, <port>, and <start>:<end>, where 0 results "
@@ -41,13 +41,18 @@ help_for_backdoor_port = (
     "chosen port is displayed in the service's log file.")
 eventlet_backdoor_opts = [
     cfg.StrOpt('backdoor_port',
-               default=None,
                help="Enable eventlet backdoor.  %s" % help_for_backdoor_port)
 ]
 
 CONF = cfg.CONF
 CONF.register_opts(eventlet_backdoor_opts)
 LOG = logging.getLogger(__name__)
+
+
+def list_opts():
+    """Entry point for oslo-config-generator.
+    """
+    return [(None, copy.deepcopy(eventlet_backdoor_opts))]
 
 
 class EventletBackdoorConfigValueError(Exception):
@@ -137,8 +142,10 @@ def initialize_if_enabled():
     # In the case of backdoor port being zero, a port number is assigned by
     # listen().  In any case, pull the port number out here.
     port = sock.getsockname()[1]
-    LOG.info(_('Eventlet backdoor listening on %(port)s for process %(pid)d') %
-             {'port': port, 'pid': os.getpid()})
+    LOG.info(
+        _LI('Eventlet backdoor listening on %(port)s for process %(pid)d'),
+        {'port': port, 'pid': os.getpid()}
+    )
     eventlet.spawn_n(eventlet.backdoor.backdoor_server, sock,
                      locals=backdoor_locals)
     return port

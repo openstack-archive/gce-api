@@ -18,10 +18,10 @@ import threading
 import webob
 
 from keystoneclient.v2_0 import client as keystone_client
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
 
 from gceapi.api import clients
-from gceapi.openstack.common import log as logging
 from gceapi import wsgi_ext as openstack_wsgi
 
 LOG = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ class Controller(object):
         keystone = keystone_client.Client(username=user, password=password,
             tenant_name=tenant, auth_url=FLAGS.keystone_gce_url)
         catalog = keystone.service_catalog.catalog["serviceCatalog"]
-        public_url = clients.get_endpoint_from_catalog(catalog, "gceapi")
+        public_url = clients.get_url_from_catalog(catalog, "gceapi")
         if not public_url:
             public_url = req.host_url
         public_url = public_url.rstrip("/")
