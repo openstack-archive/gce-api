@@ -18,7 +18,9 @@ import os.path
 import re
 from webob import exc
 
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
+from oslo_utils import timeutils
 
 from gceapi.api import clients
 from gceapi.api import operation_api
@@ -26,9 +28,7 @@ from gceapi.api import operation_util
 from gceapi.api import scopes
 from gceapi.api import utils
 from gceapi import exception
-from gceapi.openstack.common.gettextutils import _
-from gceapi.openstack.common import log as logging
-from gceapi.openstack.common import timeutils
+from gceapi.i18n import _
 
 LOG = logging.getLogger(__name__)
 FLAGS = cfg.CONF

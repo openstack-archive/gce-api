@@ -1,29 +1,31 @@
-# Copyright 2014
-# The Cloudscaling Group, Inc.
+#    Copyright 2013 Cloudscaling Group, Inc
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# http://www.apache.org/licenses/LICENSE-2.0
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
 
 
 """
   CLI interface for GCE API management.
 """
 
+import os
 import sys
 
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log
 
+from gceapi import config
 from gceapi.db import migration
-from gceapi.openstack.common import log
-from gceapi import version
+from gceapi.i18n import _
 
 
 CONF = cfg.CONF
@@ -35,9 +37,9 @@ def do_db_version():
 
 
 def do_db_sync():
-    """
-    Place a database under migration control and upgrade,
-    creating first if necessary.
+    """Place a database under migration control and upgrade,
+
+    creating if necessary.
     """
     migration.db_sync(CONF.command.version)
 
@@ -61,13 +63,20 @@ command_opt = cfg.SubCommandOpt('command',
 def main():
     CONF.register_cli_opt(command_opt)
     try:
-        default_config_files = cfg.find_config_files('gceapi')
-        CONF(sys.argv[1:], project='gceapi', prog='gce-api-manage',
-             version=version.version_info.version_string(),
-             default_config_files=default_config_files)
-        log.setup("gceapi")
-    except RuntimeError as e:
-        sys.exit("ERROR: %s" % e)
+        config.parse_args(sys.argv)
+        log.setup(CONF, "gceapi")
+    except cfg.ConfigFilesNotFoundError:
+        cfgfile = CONF.config_file[-1] if CONF.config_file else None
+        if cfgfile and not os.access(cfgfile, os.R_OK):
+            st = os.stat(cfgfile)
+            print(_("Could not read %s. Re-running with sudo") % cfgfile)
+            try:
+                os.execvp('sudo', ['sudo', '-u', '#%s' % st.st_uid] + sys.argv)
+            except Exception:
+                print(_('sudo failed, continuing as if nothing happened'))
+
+        print(_('Please re-run gce-api-manage as root.'))
+        return(2)
 
     try:
         CONF.command.func()

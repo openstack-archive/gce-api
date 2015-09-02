@@ -1,0 +1,4 @@
+# Devstack settings
+
+# we have to add gce-api to enabled services for screen_it to work
+enable_service gce-api

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from oslo.config import cfg
+from oslo_config import cfg
 
 from gceapi.api import base_api
 from gceapi.api import clients
@@ -21,7 +21,7 @@ from gceapi.api import operation_util
 from gceapi.api import region_api
 from gceapi.api import scopes
 from gceapi import exception
-from gceapi.openstack.common.gettextutils import _
+from gceapi.i18n import _
 
 CONF = cfg.CONF
 
