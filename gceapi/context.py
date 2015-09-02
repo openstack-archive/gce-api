@@ -21,11 +21,12 @@
 
 import uuid
 
+from oslo_log import log as logging
+from oslo_utils import timeutils
+
 from gceapi import exception
-from gceapi.openstack.common.gettextutils import _
+from gceapi.i18n import _
 from gceapi.openstack.common import local
-from gceapi.openstack.common import log as logging
-from gceapi.openstack.common import timeutils
 
 
 LOG = logging.getLogger(__name__)

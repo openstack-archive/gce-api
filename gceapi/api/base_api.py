@@ -18,11 +18,11 @@ Classes in this layer aggregate functionality of OpenStack necessary
 and sufficient to handle supported GCE API requests
 """
 
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_utils import timeutils
 
 from gceapi import db
 from gceapi import exception
-from gceapi.openstack.common import timeutils
 
 FLAGS = cfg.CONF
 

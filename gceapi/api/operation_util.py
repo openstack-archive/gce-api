@@ -14,9 +14,10 @@
 
 import threading
 
+from oslo_utils import timeutils
+
 from gceapi.api import operation_api
-from gceapi.openstack.common.gettextutils import _
-from gceapi.openstack.common import timeutils
+from gceapi.i18n import _
 
 
 def init_operation(context, op_type, target_type, target_name, scope):

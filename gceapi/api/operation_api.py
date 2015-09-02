@@ -14,11 +14,12 @@
 
 import uuid
 
+from oslo_utils import timeutils
+
 from gceapi.api import base_api
 from gceapi.api import scopes
 from gceapi import exception
-from gceapi.openstack.common.gettextutils import _
-from gceapi.openstack.common import timeutils
+from gceapi.i18n import _
 
 
 class API(base_api.API):

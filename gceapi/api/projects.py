@@ -21,7 +21,7 @@ from gceapi.api import operation_util
 from gceapi.api import project_api
 from gceapi.api import scopes
 from gceapi.api import wsgi as gce_wsgi
-from gceapi.openstack.common.gettextutils import _
+from gceapi.i18n import _
 
 
 class Controller(gce_common.Controller):
