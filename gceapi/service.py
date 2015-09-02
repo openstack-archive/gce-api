@@ -24,12 +24,12 @@ import sys
 
 import eventlet
 import greenlet
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
+from oslo_utils import importutils
 
+from gceapi.i18n import _
 from gceapi.openstack.common import eventlet_backdoor
-from gceapi.openstack.common.gettextutils import _
-from gceapi.openstack.common import importutils
-from gceapi.openstack.common import log as logging
 from gceapi import wsgi
 
 LOG = logging.getLogger(__name__)

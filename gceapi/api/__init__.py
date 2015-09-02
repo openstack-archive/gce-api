@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
 
 from gceapi.api import addresses
 from gceapi.api import discovery
@@ -29,7 +30,6 @@ from gceapi.api import regions
 from gceapi.api import routes
 from gceapi.api import snapshots
 from gceapi.api import zones
-from gceapi.openstack.common import log as logging
 from gceapi import wsgi
 from gceapi import wsgi_ext as openstack_api
 

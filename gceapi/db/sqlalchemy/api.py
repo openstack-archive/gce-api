@@ -15,21 +15,44 @@
 """Implementation of SQLAlchemy backend."""
 
 import ast
+import copy
 import functools
+import json
+import random
 import sys
 
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_db import exception as db_exception
+from oslo_db.sqlalchemy import session as db_session
+from sqlalchemy import and_
+from sqlalchemy import or_
+from sqlalchemy.sql import bindparam
 
 import gceapi.context
 from gceapi.db.sqlalchemy import models
-from gceapi.openstack.common.db.sqlalchemy import session as db_session
 
 CONF = cfg.CONF
-CONF.import_opt('connection',
-                'gceapi.openstack.common.db.sqlalchemy.session',
-                group='database')
 
-get_session = db_session.get_session
+
+_MASTER_FACADE = None
+
+
+def _create_facade_lazily():
+    global _MASTER_FACADE
+
+    if _MASTER_FACADE is None:
+        _MASTER_FACADE = db_session.EngineFacade.from_config(CONF)
+    return _MASTER_FACADE
+
+
+def get_engine():
+    facade = _create_facade_lazily()
+    return facade.get_engine()
+
+
+def get_session(**kwargs):
+    facade = _create_facade_lazily()
+    return facade.get_session(**kwargs)
 
 
 def get_backend():

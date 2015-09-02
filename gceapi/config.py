@@ -1,34 +1,49 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-
-# Copyright 2010 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration.
-# All Rights Reserved.
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2014
+# The Cloudscaling Group, Inc.
 #
-#    Licensed under the Apache License, Version 2.0 (the "License"); you may
-#    not use this file except in compliance with the License. You may obtain
-#    a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# http://www.apache.org/licenses/LICENSE-2.0
 #
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#    License for the specific language governing permissions and limitations
-#    under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_db import options
+from oslo_log import log
 
-from gceapi.openstack.common.db.sqlalchemy import session as db_session
 from gceapi import paths
 from gceapi import version
 
-_DEFAULT_SQL_CONNECTION = 'sqlite:///' + paths.state_path_def('$sqlite_db')
+
+CONF = cfg.CONF
+
+_DEFAULT_SQL_CONNECTION = 'sqlite:///' + paths.state_path_def('gceapi.sqlite')
+
+_DEFAULT_LOG_LEVELS = ['amqp=WARN', 'amqplib=WARN', 'boto=WARN',
+                       'qpid=WARN', 'sqlalchemy=WARN', 'suds=INFO',
+                       'oslo.messaging=INFO', 'iso8601=WARN',
+                       'requests.packages.urllib3.connectionpool=WARN',
+                       'urllib3.connectionpool=WARN', 'websocket=WARN',
+                       'keystonemiddleware=WARN', 'routes.middleware=WARN',
+                       'stevedore=WARN', 'keystoneclient.auth=WARN']
+
+_DEFAULT_LOGGING_CONTEXT_FORMAT = ('%(asctime)s.%(msecs)03d %(process)d '
+                                   '%(levelname)s %(name)s [%(request_id)s '
+                                   '%(user_identity)s] %(instance)s'
+                                   '%(message)s')
 
 
 def parse_args(argv, default_config_files=None):
-    db_session.set_defaults(sql_connection=_DEFAULT_SQL_CONNECTION,
-                            sqlite_db='gceapi.sqlite')
+    log.set_defaults(_DEFAULT_LOGGING_CONTEXT_FORMAT, _DEFAULT_LOG_LEVELS)
+    log.register_options(CONF)
+    options.set_defaults(CONF, connection=_DEFAULT_SQL_CONNECTION,
+                         sqlite_db='gceapi.sqlite')
+
     cfg.CONF(argv[1:],
              project='gceapi',
              version=version.version_info.version_string(),

@@ -26,11 +26,12 @@ SHOULD include dedicated exception logging.
 
 import sys
 
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
+
+from gceapi.i18n import _
 import webob.exc
 
-from gceapi.openstack.common.gettextutils import _
-from gceapi.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 

@@ -251,4 +251,4 @@ sudo rm -rf build gce_api.egg-info
 
 #recreate database
 echo Setuping database
-sudo bin/gceapi-db-setup deb
+sudo tools/db/gceapi-db-setup deb
