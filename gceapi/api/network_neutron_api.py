@@ -13,14 +13,14 @@
 # limitations under the License.
 
 import netaddr
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
 
 from gceapi.api import base_api
 from gceapi.api import clients
 from gceapi.api import operation_util
 from gceapi import exception
-from gceapi.openstack.common.gettextutils import _
-from gceapi.openstack.common import log as logging
+from gceapi.i18n import _
 
 
 CONF = cfg.CONF

@@ -18,14 +18,14 @@ Common Auth Middleware.
 
 """
 
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
+from oslo_serialization import jsonutils
 import webob.dec
 import webob.exc
 
 from gceapi import context
-from gceapi.openstack.common.gettextutils import _
-from gceapi.openstack.common import jsonutils
-from gceapi.openstack.common import log as logging
+from gceapi.i18n import _
 from gceapi import wsgi
 
 
