@@ -72,12 +72,12 @@ function recreate_endpoint {
             --name "$endpoint" \
             --description="$description" \
             -f value -c id)
-        openstack endpoint create \
-            $service_id \
-            --region "$REGION_NAME" \
-            --publicurl "$SERVICE_PROTOCOL://$SERVICE_HOST:$port/" \
-            --adminurl "$SERVICE_PROTOCOL://$SERVICE_HOST:$port/" \
-            --internalurl "$SERVICE_PROTOCOL://$SERVICE_HOST:$port/"
+        openstack --os-identity-api-version 3 endpoint create --region "$REGION_NAME" \
+            $service_id public "$SERVICE_PROTOCOL://$SERVICE_HOST:$port/"
+        openstack --os-identity-api-version 3 endpoint create --region "$REGION_NAME" \
+            $service_id admin "$SERVICE_PROTOCOL://$SERVICE_HOST:$port/"
+        openstack --os-identity-api-version 3 endpoint create --region "$REGION_NAME" \
+            $service_id internal "$SERVICE_PROTOCOL://$SERVICE_HOST:$port/"
     fi
 }
 
