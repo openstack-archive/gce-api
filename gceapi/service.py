@@ -41,10 +41,10 @@ service_opts = [
     cfg.IntOpt('service_down_time',
                default=60,
                help='maximum time since last check-in for up service'),
-    cfg.StrOpt('gce_listen',
+    cfg.StrOpt('gceapi_listen',
                default="0.0.0.0",
                help='IP address for gce api to listen'),
-    cfg.IntOpt('gce_listen_port',
+    cfg.IntOpt('gceapi_listen_port',
                default=8787,
                help='port for gce api to listen'),
     ]
