@@ -201,7 +201,7 @@ class Request(webob.Request):
         if not self.accept_language:
             return None
         return self.accept_language.best_match(
-                i18n.get_available_languages('gceapi'))
+                i18n.get_available_languages())
 
 
 class ActionDispatcher(object):
