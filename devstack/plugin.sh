@@ -172,10 +172,10 @@ function configure_gceapi {
 
     iniset $GCEAPI_CONF_FILE DEFAULT region $REGION_NAME
 
-    #iniset $GCEAPI_CONF_FILE DEFAULT admin_tenant_name $SERVICE_TENANT_NAME
-    #iniset $GCEAPI_CONF_FILE DEFAULT admin_user $GCEAPI_ADMIN_USER
-    #iniset $GCEAPI_CONF_FILE DEFAULT admin_password $SERVICE_PASSWORD
-    #iniset $GCEAPI_CONF_FILE DEFAULT keystone_url "http://${KEYSTONE_AUTH_HOST}:35357/v2.0"
+    iniset $GCEAPI_CONF_FILE DEFAULT admin_tenant_name $SERVICE_TENANT_NAME
+    iniset $GCEAPI_CONF_FILE DEFAULT admin_user $GCEAPI_ADMIN_USER
+    iniset $GCEAPI_CONF_FILE DEFAULT admin_password $SERVICE_PASSWORD
+    iniset $GCEAPI_CONF_FILE DEFAULT identity_uri "http://${KEYSTONE_AUTH_HOST}:35357/v2.0"
 
     configure_gceapi_rpc_backend
 

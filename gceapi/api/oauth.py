@@ -58,7 +58,9 @@ class Controller(object):
 
     AUTH_TIMEOUT = 300
     VALID_CLIENTS = {
-        "32555940559.apps.googleusercontent.com": "ZmssLNjJy2998hD4CTg2ejr2"}
+        "32555940559.apps.googleusercontent.com": "ZmssLNjJy2998hD4CTg2ejr2",
+        "1025389682001.apps.googleusercontent.com": "xslsVXhA7C8aOfSfb6edB6p6",
+    }
 
     INTERNAL_REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob"
     AUTH_PAGE_TEMPLATE =\
