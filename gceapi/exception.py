@@ -124,7 +124,7 @@ class GlanceConnectionFailed(GceapiException):
 
 
 class NotAuthorized(GceapiException):
-    ec2_code = 'AuthFailure'
+    gce_code = 'AuthFailure'
     msg_fmt = _("Not authorized.")
     code = 403
 
@@ -140,7 +140,7 @@ class PolicyNotAuthorized(NotAuthorized):
 class ImageNotActive(GceapiException):
     # NOTE(jruzicka): IncorrectState is used for volumes only in EC2,
     # but it still seems like the most appropriate option.
-    ec2_code = 'IncorrectState'
+    gce_code = 'IncorrectState'
     msg_fmt = _("Image %(image_id)s is not active.")
 
 
@@ -209,7 +209,7 @@ class InvalidAttribute(Invalid):
 
 
 class VolumeUnattached(Invalid):
-    ec2_code = 'IncorrectState'
+    gce_code = 'IncorrectState'
     msg_fmt = _("Volume %(volume_id)s is not attached to anything")
 
 
@@ -220,7 +220,7 @@ class VolumeNotCreated(GceapiException):
 
 
 class InvalidKeypair(Invalid):
-    ec2_code = 'InvalidKeyPair.Format'
+    gce_code = 'InvalidKeyPair.Format'
     msg_fmt = _("Keypair data is invalid") + ": %(reason)s"
 
 
@@ -233,7 +233,7 @@ class InvalidInput(Invalid):
 
 
 class InvalidVolume(Invalid):
-    ec2_code = 'UnsupportedOperation'
+    gce_code = 'UnsupportedOperation'
     msg_fmt = _("Invalid volume") + ": %(reason)s"
 
 
@@ -246,7 +246,7 @@ class InvalidMetadataSize(Invalid):
 
 
 class InvalidPortRange(Invalid):
-    ec2_code = 'InvalidParameterValue'
+    gce_code = 'InvalidParameterValue'
     msg_fmt = _("Invalid port range %(from_port)s:%(to_port)s. %(msg)s")
 
 
@@ -270,7 +270,7 @@ class InvalidUnicodeParameter(Invalid):
 # Cannot be templated as the error syntax varies.
 # msg needs to be constructed when raised.
 class InvalidParameterValue(Invalid):
-    ec2_code = 'InvalidParameterValue'
+    gce_code = 'InvalidParameterValue'
     msg_fmt = _("%(err)s")
 
 
@@ -449,12 +449,12 @@ class AgentBuildExists(GceapiException):
 
 
 class VolumeNotFound(NotFound):
-    ec2_code = 'InvalidVolumeID.NotFound'
+    gce_code = 'InvalidVolumeID.NotFound'
     msg_fmt = _("Volume %(volume_id)s could not be found.")
 
 
 class SnapshotNotFound(NotFound):
-    ec2_code = 'InvalidSnapshotID.NotFound'
+    gce_code = 'InvalidSnapshotID.NotFound'
     msg_fmt = _("Snapshot %(snapshot_id)s could not be found.")
 
 
@@ -606,7 +606,7 @@ class FixedIpInvalid(Invalid):
 
 
 class NoMoreFixedIps(GceapiException):
-    ec2_code = 'UnsupportedOperation'
+    gce_code = 'UnsupportedOperation'
     msg_fmt = _("Zero fixed ips available.")
 
 
@@ -619,7 +619,7 @@ class FloatingIpExists(GceapiException):
 
 
 class FloatingIpNotFound(NotFound):
-    ec2_code = "UnsupportedOpperation"
+    gce_code = "UnsupportedOpperation"
     msg_fmt = _("Floating ip not found for id %(id)s.")
 
 
@@ -650,7 +650,7 @@ class NoMoreFloatingIps(FloatingIpNotFound):
 
 
 class FloatingIpAssociated(GceapiException):
-    ec2_code = "UnsupportedOpperation"
+    gce_code = "UnsupportedOpperation"
     msg_fmt = _("Floating ip %(address)s is associated.")
 
 
@@ -663,17 +663,17 @@ class NoFloatingIpsDefined(NotFound):
 
 
 class NoFloatingIpInterface(NotFound):
-    ec2_code = "UnsupportedOpperation"
+    gce_code = "UnsupportedOpperation"
     msg_fmt = _("Interface %(interface)s not found.")
 
 
 class CannotDisassociateAutoAssignedFloatingIP(GceapiException):
-    ec2_code = "UnsupportedOpperation"
+    gce_code = "UnsupportedOpperation"
     msg_fmt = _("Cannot disassociate auto assigned floating ip")
 
 
 class KeypairNotFound(NotFound):
-    ec2_code = 'InvalidKeyPair.NotFound'
+    gce_code = 'InvalidKeyPair.NotFound'
     msg_fmt = _("Keypair %(name)s not found for user %(user_id)s")
 
 
@@ -762,7 +762,7 @@ class SecurityGroupNotFoundForRule(SecurityGroupNotFound):
 
 
 class SecurityGroupExists(Invalid):
-    ec2_code = 'InvalidGroup.Duplicate'
+    gce_code = 'InvalidGroup.Duplicate'
     msg_fmt = _("Security group %(security_group_name)s already exists "
                 "for project %(project_id)s.")
 
@@ -787,7 +787,7 @@ class SecurityGroupCannotBeApplied(Invalid):
 
 
 class SecurityGroupRuleExists(Invalid):
-    ec2_code = 'InvalidPermission.Duplicate'
+    gce_code = 'InvalidPermission.Duplicate'
     msg_fmt = _("Rule already exists in group: %(rule)s")
 
 
@@ -939,7 +939,7 @@ class RotationRequiredForBackup(GceapiException):
 
 
 class KeyPairExists(GceapiException):
-    ec2_code = 'InvalidKeyPair.Duplicate'
+    gce_code = 'InvalidKeyPair.Duplicate'
     msg_fmt = _("Key pair '%(key_name)s' already exists.")
 
 
@@ -1019,7 +1019,7 @@ class NoValidHost(GceapiException):
 
 
 class QuotaError(GceapiException):
-    ec2_code = 'ResourceLimitExceeded'
+    gce_code = 'ResourceLimitExceeded'
     msg_fmt = _("Quota exceeded") + ": code=%(code)s"
     code = 413
     headers = {'Retry-After': 0}
@@ -1060,7 +1060,7 @@ class KeypairLimitExceeded(QuotaError):
 
 
 class SecurityGroupLimitExceeded(QuotaError):
-    ec2_code = 'SecurityGroupLimitExceeded'
+    gce_code = 'SecurityGroupLimitExceeded'
     msg_fmt = _("Maximum number of security groups or rules exceeded")
 
 
@@ -1114,7 +1114,7 @@ class CidrConflict(GceapiException):
 
 
 class InstanceNotFound(NotFound):
-    ec2_code = 'InvalidInstanceID.NotFound'
+    gce_code = 'InvalidInstanceID.NotFound'
     msg_fmt = _("Instance %(instance_id)s could not be found.")
 
 
@@ -1136,7 +1136,7 @@ class MarkerNotFound(NotFound):
 
 
 class InvalidInstanceIDMalformed(Invalid):
-    ec2_code = 'InvalidInstanceID.Malformed'
+    gce_code = 'InvalidInstanceID.Malformed'
     msg_fmt = _("Invalid id: %(val)s (expecting \"i-...\").")
 
 
@@ -1388,7 +1388,7 @@ class PciRequestAliasNotDefined(GceapiException):
 
 
 class MissingParameter(GceapiException):
-    ec2_code = 'MissingParameter'
+    gce_code = 'MissingParameter'
     msg_fmt = _("Not enough parameters: %(reason)s")
     code = 400
 
@@ -1403,7 +1403,7 @@ class PciTrackerInvalidNodeId(GceapiException):
 
 # Cannot be templated, msg needs to be constructed when raised.
 class InternalError(GceapiException):
-    ec2_code = 'InternalError'
+    gce_code = 'InternalError'
     msg_fmt = "%(err)s"
 
 
