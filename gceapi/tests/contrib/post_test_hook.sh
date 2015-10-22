@@ -46,7 +46,8 @@ if [[ ! -f $TEST_CONFIG_DIR/$TEST_CONFIG ]]; then
   project_id=$id
   [[ -n "$project_id" ]] || { echo "Can't create project"; exit 1; }
   user_name="user-$(cat /dev/urandom | tr -cd 'a-f0-9' | head -c 8)"
-  eval $(openstack user create "$user_name" --project "$project_id" --password "password" --email "$user_name@example.com" -f shell -c id)
+  password='qwe123QWE'
+  eval $(openstack user create "$user_name" --project "$project_id" --password "$password" --email "$user_name@example.com" -f shell -c id)
   user_id=$id
   [[ -n "$user_id" ]] || { echo "Can't create user"; exit 1; }
   # add 'Member' role for swift access
@@ -70,7 +71,7 @@ if [[ ! -f $TEST_CONFIG_DIR/$TEST_CONFIG ]]; then
   export OS_PROJECT_NAME=$project_name
   export OS_TENANT_NAME=$project_name
   export OS_USERNAME=$user_name
-  export OS_PASSWORD="password"
+  export OS_PASSWORD=$password
 
   sudo bash -c "cat > $TEST_CONFIG_DIR/$TEST_CONFIG <<EOF
 [gce]
@@ -80,17 +81,22 @@ build_interval=${TIMEOUT:-180}
 # GCE API schema
 schema=${GCE_SCHEMA:-'etc/gceapi/protocols/v1.json'}
 
+# GCE auth options
+cred_type=${GCE_CRED_TYPE:-'os_token'}
+auth_url=${GCE_AUTH_URL:-'http://localhost:5000/v2.0/'}
+username=${OS_USERNAME:-'demo'}
+password=${OS_PASSWORD:-'qwe123QWE'}
+
 # GCE services address
 protocol=${GCE_API_PROTOCOL:-'http'}
 host=${GCE_HOST:-'localhost'}
 port=${GCE_PORT:-8787}
 
-# GCE URLs
-auth_url=${GCE_AUTH_URL:-'/auth'}
+# GCE API URLs
 discovery_url=${GCE_DISCOVERY_URL:-'/discovery/v1/apis/{api}/{apiVersion}/rest'}
 
 # GCE resource IDs for testing
-project_id=$project_id
+project_id=${OS_PROJECT_NAME:-'demo'}
 zone=${ZONE:-'nova'}
 region=${REGION:-'RegionOne'}
 EOF"
