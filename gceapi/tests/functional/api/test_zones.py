@@ -46,8 +46,4 @@ class TestZones(test_base.GCETestCase):
         result = self.zones.list(project=project_id).execute()
         self.trace('Zones: {}'.format(result))
         self.api.validate_schema(value=result, schema_name='ZoneList')
-        zone = self.cfg.zone
-        self.assertIn(
-            zone,
-            result['items'],
-            'There is no required zone {} in returned list'.format(zone))
+        self.assertFind(self.cfg.zone, result)

@@ -33,13 +33,6 @@ class TestRegions(test_base.GCETestCase):
                              'Null regions object, api is not built properly')
         return res
 
-    def test_list(self):
-        project_id = self.cfg.project_id
-        self.trace('List regions: project_id={}'.format(project_id))
-        result = self.regions.list(project=project_id).execute()
-        self.trace('Regions: {}'.format(result))
-        self.api.validate_schema(value=result, schema_name='RegionList')
-
     def test_describe(self):
         project_id = self.cfg.project_id
         region = self.cfg.region
@@ -48,3 +41,11 @@ class TestRegions(test_base.GCETestCase):
         result = self.regions.get(project=project_id, region=region).execute()
         self.trace('Region: {}'.format(result))
         self.api.validate_schema(value=result, schema_name='Region')
+
+    def test_list(self):
+        project_id = self.cfg.project_id
+        self.trace('List regions: project_id={}'.format(project_id))
+        result = self.regions.list(project=project_id).execute()
+        self.trace('Regions: {}'.format(result))
+        self.api.validate_schema(value=result, schema_name='RegionList')
+        self.assertFind(self.cfg.region, result)

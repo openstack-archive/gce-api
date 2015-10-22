@@ -15,12 +15,14 @@
 #    under the License.
 
 
-from gceapi.tests.functional import config
 from googleapiclient.discovery import build
 from googleapiclient.schema import Schemas
+from jsonschema import RefResolver
 from jsonschema import validate
-from oauth2client.client import GoogleCredentials
 from tempest_lib import base
+
+from gceapi.tests.functional import config
+from gceapi.tests.functional.credentials import CredentialsProvider
 
 
 class TestSupp(object):
@@ -38,32 +40,58 @@ class TestSupp(object):
         self._log.trace(*args, **kwargs)
 
 
+class LocalRefResolver(RefResolver):
+    def __init__(
+            self,
+            base_uri,
+            referrer,
+            store=(),
+            cache_remote=True,
+            handlers=(),
+            urljoin_cache=None,
+            remote_cache=None):
+        super(LocalRefResolver, self).__init__(base_uri,
+                                               referrer,
+                                               store,
+                                               cache_remote,
+                                               handlers,
+                                               urljoin_cache,
+                                               remote_cache)
+        self._local_schema = referrer
+
+    def resolve_from_url(self, url):
+        if url in self._local_schema:
+            return self._local_schema[url]
+        return super(LocalRefResolver, self).resolve_from_url(url)
+
+
 class GCEApi(object):
-    def __init__(self, supp):
-        self._supp = supp
-        self._schema = None
+    def __init__(self, supp, cred_provider):
         self._compute = None
+        self._cred_provider = cred_provider
+        self._schema = None
+        self._scheme_ref_resolver = 0
+        self._supp = supp
 
     def init(self):
         self._schema = Schemas(self._supp.cfg.schema)
-        self._auth()
+        self._scheme_ref_resolver = LocalRefResolver.from_schema(
+            self._schema.schemas)
         self._build_api()
 
-    def _auth(self):
-        self._trace('Create GoogleCredentials from default app file')
-        self.credentials = GoogleCredentials.get_application_default()
-
     def _build_api(self):
-        url = self._get_discovery_url()
+        credentials = self._cred_provider.credentials
+        url = self._discovery_url
         self._trace(
             'Build Google compute api with discovery url {}'.format(url))
         self._compute = build(
             'compute', 'v1',
-            credentials=self.credentials,
+            credentials=credentials,
             discoveryServiceUrl=url
         )
 
-    def _get_discovery_url(self):
+    @property
+    def _discovery_url(self):
         cfg = self._supp.cfg
         return '{}://{}:{}{}'.format(
             cfg.protocol,
@@ -81,7 +109,8 @@ class GCEApi(object):
         return self._compute
 
     def validate_schema(self, value, schema_name):
-        validate(value, self._schema[schema_name])
+        schema = self._schema.get(schema_name)
+        validate(value, schema, resolver=self._scheme_ref_resolver)
 
 
 class GCETestCase(base.BaseTestCase):
@@ -101,6 +130,18 @@ class GCETestCase(base.BaseTestCase):
     @classmethod
     def setUpClass(cls):
         cls._supp = TestSupp()
-        cls._api = GCEApi(cls._supp)
+        cls._api = GCEApi(cls._supp, CredentialsProvider(cls._supp))
         cls._api.init()
         super(GCETestCase, cls).setUpClass()
+
+    def assertFind(self, item, items_list):
+        found = False
+        items = items_list['items']
+        for i in items:
+            if i['name'] == item:
+                found = True
+                break
+
+        self.assertTrue(
+            found,
+            'There is no required item {} in the list {}'.format(item, items))

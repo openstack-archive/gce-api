@@ -29,6 +29,23 @@ OPTIONS = [
                default=1,
                help='Interval'),
 
+    # GCE auth options
+    cfg.StrOpt('cred_type',
+               default='os_token',
+               help='Method how to get credentials:'
+                    '\n\tos_token - request token from OS keystone directly'
+                    '\n\tgcloud_auth - use app credentials that should be'
+                        'obtained before via gcloud auth'),
+    cfg.StrOpt('username',
+               default='demo',
+               help='User name'),
+    cfg.StrOpt('password',
+               default='qwe123QWE',
+               help='User password'),
+    cfg.StrOpt('auth_url',
+               default='http://localhost:5000/v2.0/',
+               help='OAuth API relative URL'),
+
     # GCE API schema
     cfg.StrOpt('schema',
                default='etc/gceapi/protocols/v1.json',
@@ -45,15 +62,16 @@ OPTIONS = [
                default=8787,
                help='GCE service port'),
 
-    # GCE URLs
-    cfg.StrOpt('auth_url',
-               default='/auth',
-               help='OAuth API relative URL'),
+    # GCE API URLs
     cfg.StrOpt('discovery_url',
                default='/discovery/v1/apis/{api}/{apiVersion}/rest',
                help='Discovery API relative URL'),
 
     # GCE resource IDs for testing
+    # Note that Google's project has Name, ID and Number, for project
+    # identification ID should be used, but in Openstack project has
+    # Name and ID, where Name is corresponds to Project ID in Google, ID is
+    # Openstack ID's and has no relation to Google's ID and Number.
     cfg.StrOpt('project_id',
                default='test',
                help='GCE Project ID for testing'),
