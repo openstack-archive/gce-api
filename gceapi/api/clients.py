@@ -11,7 +11,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from keystoneclient.v2_0 import client as kc
+from keystoneclient import client as kc
 from novaclient import client as novaclient
 from novaclient import exceptions as nova_exception
 from oslo_config import cfg
@@ -52,7 +52,7 @@ _nova_api_version = None
 
 def nova(context, service_type='compute'):
     args = {
-        'auth_url': CONF.keystone_gce_url,
+        'auth_url': CONF.keystone_url,
         'auth_token': context.auth_token,
         'bypass_url': url_for(context, service_type),
     }
@@ -67,7 +67,7 @@ def neutron(context):
         return None
 
     args = {
-        'auth_url': CONF.keystone_gce_url,
+        'auth_url': CONF.keystone_url,
         'service_type': 'network',
         'token': context.auth_token,
         'endpoint_url': url_for(context, 'network'),
@@ -81,7 +81,7 @@ def glance(context):
         return None
 
     args = {
-        'auth_url': CONF.keystone_gce_url,
+        'auth_url': CONF.keystone_url,
         'service_type': 'image',
         'token': context.auth_token,
     }
@@ -96,7 +96,7 @@ def cinder(context):
 
     args = {
         'service_type': 'volume',
-        'auth_url': CONF.keystone_gce_url,
+        'auth_url': CONF.keystone_url,
         'username': None,
         'api_key': None,
     }
@@ -110,18 +110,24 @@ def cinder(context):
 
 
 def keystone(context):
-    return kc.Client(
+    c = kc.Client(
         token=context.auth_token,
         project_id=context.project_id,
         tenant_id=context.project_id,
-        auth_url=CONF.keystone_gce_url)
+        auth_url=CONF.keystone_url)
+    if c.auth_ref is None:
+        # Ver2 doesn't create session and performs
+        # authentication automatically, but Ver3 does create session
+        # if it's not provided and doesn't perform authentication.
+        # TODO(use sessions)
+        c.authenticate()
+    return c
 
 
 def url_for(context, service_type):
     service_catalog = context.service_catalog
     if not service_catalog:
-        catalog = keystone(context).service_catalog.catalog
-        service_catalog = catalog['serviceCatalog']
+        service_catalog = keystone(context).service_catalog.get_data()
         context.service_catalog = service_catalog
     return get_url_from_catalog(service_catalog, service_type)
 

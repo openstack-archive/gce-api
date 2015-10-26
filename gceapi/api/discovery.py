@@ -17,7 +17,7 @@ import os
 import threading
 import webob
 
-from keystoneclient.v2_0 import client as keystone_client
+from keystoneclient import client as keystone_client
 from oslo_config import cfg
 from oslo_log import log as logging
 
@@ -25,7 +25,7 @@ from gceapi.api import clients
 from gceapi import wsgi_ext as openstack_wsgi
 
 LOG = logging.getLogger(__name__)
-FLAGS = cfg.CONF
+CONF = cfg.CONF
 
 
 class Controller(object):
@@ -40,12 +40,20 @@ class Controller(object):
         if key in self._files:
             return self._files[key]
 
-        tenant = FLAGS.keystone_authtoken["admin_tenant_name"]
-        user = FLAGS.keystone_authtoken["admin_user"]
-        password = FLAGS.keystone_authtoken["admin_password"]
-        keystone = keystone_client.Client(username=user, password=password,
-            tenant_name=tenant, auth_url=FLAGS.keystone_gce_url)
-        catalog = keystone.service_catalog.catalog["serviceCatalog"]
+        auth_data = {
+            'project_name': CONF.keystone_authtoken['admin_tenant_name'],
+            'username': CONF.keystone_authtoken['admin_user'],
+            'password': CONF.keystone_authtoken['admin_password'],
+            'auth_url': CONF.keystone_url,
+        }
+        keystone = keystone_client.Client(**auth_data)
+        if keystone.auth_ref is None:
+            # Ver2 doesn't create session and performs
+            # authentication automatically, but Ver3 does create session
+            # if it's not provided and doesn't perform authentication.
+            # TODO(use sessions)
+            keystone.authenticate()
+        catalog = keystone.service_catalog.get_data()
         public_url = clients.get_url_from_catalog(catalog, "gceapi")
         if not public_url:
             public_url = req.host_url
@@ -66,7 +74,7 @@ class Controller(object):
     def _load_file(self, version):
         file = version + ".json"
 
-        protocol_dir = FLAGS.get("protocol_dir")
+        protocol_dir = CONF.get("protocol_dir")
         if protocol_dir:
             file_name = os.path.join(protocol_dir, file)
             try:
