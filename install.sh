@@ -210,32 +210,24 @@ if [ ! -s $APIPASTE_FILE ]; then
 fi
 sudo cp -nR etc/gceapi/protocols $CONF_DIR
 
-AUTH_HOST=${OS_AUTH_URL#*//}
-AUTH_HOST=${AUTH_HOST%:*}
 AUTH_CACHE_DIR=${AUTH_CACHE_DIR:-/var/cache/gceapi}
-AUTH_PORT=`keystone catalog|grep -A 9 identity|grep adminURL|awk '{print $4}'`
-AUTH_PORT=${AUTH_PORT##*:}
-AUTH_PORT=${AUTH_PORT%%/*}
-AUTH_PROTO=${OS_AUTH_URL%%:*}
 PUBLIC_URL=${OS_AUTH_URL%:*}:8787/
 
 #update default config with some values
 iniset $CONF_FILE DEFAULT api_paste_config $APIPASTE_FILE
 iniset $CONF_FILE DEFAULT logging_context_format_string "%(asctime)s.%(msecs)03d %(levelname)s %(name)s [%(request_id)s %(user_name)s %(project_name)s] %(instance)s%(message)s"
 iniset $CONF_FILE DEFAULT verbose True
-iniset $CONF_FILE DEFAULT keystone_gce_url "$OS_AUTH_URL"
 iniset $CONF_FILE DEFAULT network_api "$NETWORK_API"
 iniset $CONF_FILE DEFAULT region "$REGION"
-iniset $CONF_FILE DEFAULT protocol_dir $CONF_DIR/protocols
+iniset $CONF_FILE DEFAULT protocol_dir "$CONF_DIR/protocols"
+iniset $CONF_FILE DEFAULT keystone_url "$OS_AUTH_URL"
 iniset $CONF_FILE database connection "$CONNECTION"
 
 iniset $CONF_FILE keystone_authtoken signing_dir $SIGNING_DIR
-iniset $CONF_FILE keystone_authtoken auth_host $AUTH_HOST
 iniset $CONF_FILE keystone_authtoken admin_user $SERVICE_USERNAME
 iniset $CONF_FILE keystone_authtoken admin_password $SERVICE_PASSWORD
 iniset $CONF_FILE keystone_authtoken admin_tenant_name $SERVICE_TENANT
-iniset $CONF_FILE keystone_authtoken auth_protocol $AUTH_PROTO
-iniset $CONF_FILE keystone_authtoken auth_port $AUTH_PORT
+iniset $CONF_FILE keystone_authtoken identity_uri "$OS_AUTH_URL"
 
 
 #init cache dir

@@ -193,6 +193,9 @@ class GCESmokeTestCase(testtools.TestCase):
         if GCESmokeTestCase.failed:
             raise unittest.SkipTest("Skipped by previous exception")
         super(GCESmokeTestCase, self).setUp()
+        self.skipTest('Not to run in gating. It is just an old example and '
+                     'will be remove removed in future')
+
 
     def wait_for_operation(self, body, operation, status):
         self.assertEqual("compute#operation", body["kind"])
