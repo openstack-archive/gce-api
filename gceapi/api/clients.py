@@ -52,7 +52,7 @@ _nova_api_version = None
 
 def nova(context, service_type='compute'):
     args = {
-        'auth_url': CONF.keystone_gce_url,
+        'auth_url': CONF.keystone_url,
         'auth_token': context.auth_token,
         'bypass_url': url_for(context, service_type),
     }
@@ -67,7 +67,7 @@ def neutron(context):
         return None
 
     args = {
-        'auth_url': CONF.keystone_gce_url,
+        'auth_url': CONF.keystone_url,
         'service_type': 'network',
         'token': context.auth_token,
         'endpoint_url': url_for(context, 'network'),
@@ -81,7 +81,7 @@ def glance(context):
         return None
 
     args = {
-        'auth_url': CONF.keystone_gce_url,
+        'auth_url': CONF.keystone_url,
         'service_type': 'image',
         'token': context.auth_token,
     }
@@ -96,7 +96,7 @@ def cinder(context):
 
     args = {
         'service_type': 'volume',
-        'auth_url': CONF.keystone_gce_url,
+        'auth_url': CONF.keystone_url,
         'username': None,
         'api_key': None,
     }
@@ -114,7 +114,7 @@ def keystone(context):
         token=context.auth_token,
         project_id=context.project_id,
         tenant_id=context.project_id,
-        auth_url=CONF.keystone_gce_url)
+        auth_url=CONF.keystone_url)
 
 
 def url_for(context, service_type):

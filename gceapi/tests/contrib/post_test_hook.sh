@@ -76,7 +76,8 @@ if [[ ! -f $TEST_CONFIG_DIR/$TEST_CONFIG ]]; then
   sudo bash -c "cat > $TEST_CONFIG_DIR/$TEST_CONFIG <<EOF
 [gce]
 # Generic options
-build_interval=${TIMEOUT:-180}
+build_timeout=${TIMEOUT:-180}
+build_interval=1
 
 # GCE API schema
 schema=${GCE_SCHEMA:-'etc/gceapi/protocols/v1.json'}
@@ -103,6 +104,7 @@ EOF"
 fi
 
 sudo pip install -r test-requirements.txt
+sudo pip install google-api-python-client
 sudo OS_STDOUT_CAPTURE=-1 OS_STDERR_CAPTURE=-1 OS_TEST_TIMEOUT=500 OS_TEST_LOCK_PATH=${TMPDIR:-'/tmp'} \
   python -m subunit.run discover -t ./ ./gceapi/tests/functional | subunit-2to1 | tools/colorizer.py
 RETVAL=$?
