@@ -29,6 +29,10 @@ class FakeTenants(object):
         return FAKE_PROJECTS
 
 
+class FakeAccessInfo(object):
+    pass
+
+
 class FakeKeystoneClient(object):
     def __init__(self, **kwargs):
         pass
@@ -36,3 +40,7 @@ class FakeKeystoneClient(object):
     @property
     def tenants(self):
         return FakeTenants()
+
+    @property
+    def auth_ref(self):
+        return FakeAccessInfo()

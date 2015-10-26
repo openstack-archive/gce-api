@@ -20,6 +20,7 @@ from oslo_db.sqlalchemy import models
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Index, PrimaryKeyConstraint, String, Text
 
+
 BASE = declarative_base()
 
 
@@ -34,3 +35,10 @@ class Item(BASE, models.ModelBase):
     kind = Column(String(length=50))
     name = Column(String(length=63))
     data = Column(Text())
+
+    def save(self, session=None):
+        from gceapi.db.sqlalchemy import api
+        if session is None:
+            session = api.get_session()
+
+        super(Item, self).save(session=session)

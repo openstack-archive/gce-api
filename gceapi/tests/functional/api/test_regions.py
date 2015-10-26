@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import unittest
 
 from gceapi.tests.functional import test_base
 
@@ -33,6 +34,8 @@ class TestRegions(test_base.GCETestCase):
                              'Null regions object, api is not built properly')
         return res
 
+    # TODO(alexey-mr): Google allows [a-z](?:[-a-z0-9]{0,61}[a-z0-9])?
+    @unittest.skip("Skip test for now: google dosnt't allow name RegionOne")
     def test_describe(self):
         project_id = self.cfg.project_id
         region = self.cfg.region

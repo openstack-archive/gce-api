@@ -17,7 +17,7 @@ import uuid
 
 from cinderclient import client as cinderclient
 from glanceclient import client as glanceclient
-from keystoneclient.v2_0 import client as kc
+from keystoneclient import client as kc
 from neutronclient.v2_0 import client as neutronclient
 from novaclient import client as novaclient
 from oslo_utils import timeutils
