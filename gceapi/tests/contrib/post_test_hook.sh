@@ -37,22 +37,27 @@ if [[ ! -f $TEST_CONFIG_DIR/$TEST_CONFIG ]]; then
     exit 1
   fi
 
-  # prepare flavors
-  nova flavor-create --is-public True m1.gceapi 16 512 0 1
-
   # create separate user/project
   project_name="project-$(cat /dev/urandom | tr -cd 'a-f0-9' | head -c 8)"
   eval $(openstack project create -f shell -c id $project_name)
   project_id=$id
   [[ -n "$project_id" ]] || { echo "Can't create project"; exit 1; }
   user_name="user-$(cat /dev/urandom | tr -cd 'a-f0-9' | head -c 8)"
-  password='qwe123QWE'
+  password='password'
   eval $(openstack user create "$user_name" --project "$project_id" --password "$password" --email "$user_name@example.com" -f shell -c id)
   user_id=$id
   [[ -n "$user_id" ]] || { echo "Can't create user"; exit 1; }
   # add 'Member' role for swift access
   role_id=$(openstack role show  Member -c id -f value)
   openstack role add --project $project_id --user $user_id $role_id
+
+  # prepare flavors
+  flavor_name="n1.standard.1"
+  if [[ -z "$(nova flavor-list | grep $flavor_name)" ]]; then
+    nova flavor-create --is-public True $flavor_name 16 512 0 1
+    [[ "$?" -eq 0 ]] || { echo "Failed to prepare flavor"; exit 1; }
+  fi
+
   # create network
   if [[ -n $(openstack service list | grep neutron) ]]; then
     net_id=$(neutron net-create --tenant-id $project_id "private" | grep ' id ' | awk '{print $4}')
@@ -68,6 +73,19 @@ if [[ ! -f $TEST_CONFIG_DIR/$TEST_CONFIG ]]; then
     neutron router-gateway-set $router_id $public_net_id
     [[ "$?" -eq 0 ]] || { echo "router-gateway-set failed"; exit 1; }
   fi
+
+  #create image in raw format
+  os_image_name="cirros-0.3.4-raw-image"
+  if [[ -z "$(openstack image list | grep $os_image_name)" ]]; then
+    image_name="cirros-0.3.4-x86_64-disk.img"
+    cirros_image_url="http://download.cirros-cloud.net/0.3.4/$image_name"
+    sudo rm -f /tmp/$image_name
+    wget -nv -P /tmp $cirros_image_url
+    [[ "$?" -eq 0 ]] || { echo "Failed to download image"; exit 1; }
+    openstack image create --disk-format raw --container-format bare --public --file "/tmp/$image_name" $os_image_name
+    [[ "$?" -eq 0 ]] || { echo "Failed to prepare image"; exit 1; }
+  fi
+
   export OS_PROJECT_NAME=$project_name
   export OS_TENANT_NAME=$project_name
   export OS_USERNAME=$user_name
@@ -76,7 +94,8 @@ if [[ ! -f $TEST_CONFIG_DIR/$TEST_CONFIG ]]; then
   sudo bash -c "cat > $TEST_CONFIG_DIR/$TEST_CONFIG <<EOF
 [gce]
 # Generic options
-build_interval=${TIMEOUT:-180}
+build_timeout=${TIMEOUT:-180}
+build_interval=1
 
 # GCE API schema
 schema=${GCE_SCHEMA:-'etc/gceapi/protocols/v1.json'}
@@ -99,12 +118,16 @@ discovery_url=${GCE_DISCOVERY_URL:-'/discovery/v1/apis/{api}/{apiVersion}/rest'}
 project_id=${OS_PROJECT_NAME}
 zone=${ZONE:-'nova'}
 region=${REGION:-'RegionOne'}
+# convert flavor name: becase GCE dowsn't allows '.' and converts '-' into '.'
+machine_type=${flavor_name//\./-}
+image=${os_image_name}
 EOF"
 fi
 
 sudo pip install -r test-requirements.txt
+sudo pip install google-api-python-client
 sudo OS_STDOUT_CAPTURE=-1 OS_STDERR_CAPTURE=-1 OS_TEST_TIMEOUT=500 OS_TEST_LOCK_PATH=${TMPDIR:-'/tmp'} \
-  python -m subunit.run discover -t ./ ./gceapi/tests/functional | subunit-2to1 | tools/colorizer.py
+  python -m subunit.run discover -t ./ ./gceapi/tests/functional/api | subunit-2to1 | tools/colorizer.py
 RETVAL=$?
 
 # Here can be some commands for log archiving, etc...
@@ -120,8 +143,9 @@ export OS_PROJECT_NAME=$OLD_OS_PROJECT_NAME
 export OS_TENANT_NAME=$OLD_OS_PROJECT_NAME
 export OS_USERNAME=$OLD_OS_USERNAME
 export OS_PASSWORD=$OLD_OS_PASSWORD
-openstack server list --all-projects
+openstack flavor list
 openstack image list
+openstack server list --all-projects
 openstack volume list --all-projects
 cinder snapshot-list --all-tenants
 

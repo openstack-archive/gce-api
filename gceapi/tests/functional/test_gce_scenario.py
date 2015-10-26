@@ -15,14 +15,15 @@
 #    under the License.
 
 import itertools
-
 import netaddr
-from oslo_log import log as logging
 import testtools
 
+from oslo_log import log as logging
 from tempest.common.utils import data_utils
 from tempest import config
-import tempest.thirdparty.gce.base as base_gce
+
+from gceapi.tests.functional import base as base_gce
+
 
 CONF = config.CONF
 LOG = logging.getLogger("tempest.thirdparty.gce")

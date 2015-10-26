@@ -32,6 +32,13 @@ class CredentialsProvider(object):
         return GoogleCredentials.get_application_default()
 
     def _get_token_crenetials(self):
+        client = self._create_keystone_client()
+        token = client.auth_token
+        self._trace('Created token {}'.format(token))
+        return AccessTokenCredentials(access_token=token,
+                                      user_agent='GCE test')
+
+    def _create_keystone_client(self):
         cfg = self._supp.cfg
         auth_data = {
             'username': cfg.username,
@@ -39,14 +46,15 @@ class CredentialsProvider(object):
             'tenant_name': cfg.project_id,
             'auth_url': cfg.auth_url
         }
-        self._trace('Auth data {}'.format(auth_data))
+        self._trace('Create keystone client, auth_data={}'.format(auth_data))
         client = KeystoneClient(**auth_data)
         if not client.authenticate():
             raise Exception('Failed to authenticate user')
-        token = client.auth_token
-        self._trace('Created token {}'.format(token))
-        return AccessTokenCredentials(access_token=token,
-                                      user_agent='GCE test')
+        return client
+
+    @property
+    def keystone_client(self):
+        return self._create_keystone_client()
 
     @property
     def credentials(self):

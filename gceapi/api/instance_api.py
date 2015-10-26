@@ -393,7 +393,6 @@ class API(base_api.API):
         instance = context.operation_data.get("instance")
         progress = {"progress": int(100.0 * disk_device / full_count)}
 
-        disk_device = context.operation_data["disk_device"]
         disk = context.operation_data.get("disk")
         if disk:
             volume_id = disk["id"]
@@ -421,8 +420,14 @@ class API(base_api.API):
                                      body, scope=scope)
                 disk["id"] = volume["id"]
                 context.operation_data["disk"] = disk
-            device_name = "vd" + string.ascii_lowercase[disk_device]
+            # deviceName is optional parameter
+            # use passed value if given, othewise generate new dev name
+            device_name = disk.get("deviceName")
+            if device_name is None:
+                device_name = "vd" + string.ascii_lowercase[disk_device]
+                disk["deviceName"] = device_name
             bdm[device_name] = disk["id"]
+
             if "initializeParams" in disk:
                 return progress
             disk_device += 1
