@@ -46,7 +46,7 @@ if [[ ! -f $TEST_CONFIG_DIR/$TEST_CONFIG ]]; then
   project_id=$id
   [[ -n "$project_id" ]] || { echo "Can't create project"; exit 1; }
   user_name="user-$(cat /dev/urandom | tr -cd 'a-f0-9' | head -c 8)"
-  password='qwe123QWE'
+  password='password'
   eval $(openstack user create "$user_name" --project "$project_id" --password "$password" --email "$user_name@example.com" -f shell -c id)
   user_id=$id
   [[ -n "$user_id" ]] || { echo "Can't create user"; exit 1; }
@@ -76,7 +76,8 @@ if [[ ! -f $TEST_CONFIG_DIR/$TEST_CONFIG ]]; then
   sudo bash -c "cat > $TEST_CONFIG_DIR/$TEST_CONFIG <<EOF
 [gce]
 # Generic options
-build_interval=${TIMEOUT:-180}
+build_timeout=${TIMEOUT:-180}
+build_interval=1
 
 # GCE API schema
 schema=${GCE_SCHEMA:-'etc/gceapi/protocols/v1.json'}
@@ -103,6 +104,7 @@ EOF"
 fi
 
 sudo pip install -r test-requirements.txt
+sudo pip install google-api-python-client
 sudo OS_STDOUT_CAPTURE=-1 OS_STDERR_CAPTURE=-1 OS_TEST_TIMEOUT=500 OS_TEST_LOCK_PATH=${TMPDIR:-'/tmp'} \
   python -m subunit.run discover -t ./ ./gceapi/tests/functional | subunit-2to1 | tools/colorizer.py
 RETVAL=$?
