@@ -40,7 +40,7 @@ OPTIONS = [
                default='demo',
                help='User name'),
     cfg.StrOpt('password',
-               default='qwe123QWE',
+               default='password',
                help='User password'),
     cfg.StrOpt('auth_url',
                default='http://localhost:5000/v2.0/',
@@ -81,6 +81,22 @@ OPTIONS = [
     cfg.StrOpt('region',
                default='RegionOne',
                help='GCE Region for testing'),
+
+    cfg.StrOpt('instance',
+               default='testinstance{}',
+               help='GCE Instance name template for testing'),
+    cfg.StrOpt('machine_type',
+               default='n1-standard-1',
+               help='Machine type - a type of instance ot be created'),
+    cfg.StrOpt('image',
+               default='debian-cloud/global/images/debian-7-wheezy-v20150929',
+               help='Image to create instances'),
+    cfg.StrOpt('disk_type',
+               default='pd-standard',
+               help='Disk type to create for instance'),
+    cfg.StrOpt('network',
+               default='default',
+               help='Network name for instance creation'),
 ]
 
 
