@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import time
 
 from googleapiclient.discovery import build
 from googleapiclient.schema import Schemas
@@ -36,8 +37,7 @@ class TestSupp(object):
         return self._cfg
 
     def trace(self, *args, **kwargs):
-        print(args, kwargs)
-        self._log.trace(*args, **kwargs)
+        self._log.debug(*args, **kwargs)
 
 
 class LocalRefResolver(RefResolver):
@@ -108,6 +108,15 @@ class GCEApi(object):
         assert(self._compute is not None)
         return self._compute
 
+    @property
+    def base_url(self):
+        cfg = self._supp.cfg
+        return '{}://{}:{}'.format(
+            cfg.protocol,
+            cfg.host,
+            cfg.port
+        )
+
     def validate_schema(self, value, schema_name):
         schema = self._schema.get(schema_name)
         validate(value, schema, resolver=self._scheme_ref_resolver)
@@ -136,12 +145,41 @@ class GCETestCase(base.BaseTestCase):
 
     def assertFind(self, item, items_list):
         found = False
-        items = items_list['items']
-        for i in items:
-            if i['name'] == item:
-                found = True
-                break
+        key = 'items'
+        items = []
+        if key in items_list:
+            items = items_list[key]
+            for i in items:
+                if i['name'] == item:
+                    found = True
+                    break
 
         self.assertTrue(
             found,
             'There is no required item {} in the list {}'.format(item, items))
+
+    def _trace_request(self, r):
+        self.trace('Request: {}'.format(r.to_json()))
+
+    def _execute_async_request(self, project, zone, request):
+        self._trace_request(request)
+        operation = request.execute()
+        name = operation['name']
+        self.trace('Waiting for operation {} to finish...'.format(name))
+        begin = time.time()
+        timeout = self._supp.cfg.build_timeout
+        while time.time() - begin < timeout:
+            result = self.api.compute.zoneOperations().get(
+                project=project,
+                zone=zone,
+                operation=name).execute()
+            if result['status'] == 'DONE':
+                if 'error' in result:
+                    self.fail('Request {} failed with error {}'. format(
+                        name, result['error']))
+                else:
+                    self.trace("Request {} done successfully".format(name))
+                return result
+            time.sleep(1)
+
+        self.fail('Request {} failed with timeout {}'.format(name, timeout))

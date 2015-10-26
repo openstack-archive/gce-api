@@ -17,8 +17,8 @@ import json
 import time
 import uuid
 
+from keystoneclient import client as keystone_client
 from keystoneclient import exceptions
-from keystoneclient.v2_0 import client as keystone_client
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import timeutils
@@ -27,7 +27,7 @@ import webob
 from gceapi.i18n import _
 from gceapi import wsgi_ext as openstack_wsgi
 
-FLAGS = cfg.CONF
+CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -150,7 +150,7 @@ class Controller(object):
             keystone = keystone_client.Client(
                 username=username,
                 password=password,
-                auth_url=FLAGS.keystone_gce_url)
+                auth_url=CONF.keystone_url)
             token = keystone.auth_ref["token"]
             client.auth_token = token["id"]
             s = timeutils.parse_isotime(token["issued_at"])
@@ -201,7 +201,7 @@ class AuthProtocol(object):
     """Filter for translating oauth token to keystone token."""
     def __init__(self, app):
         self.app = app
-        self.keystone_url = FLAGS.keystone_gce_url
+        self.auth_url = CONF.keystone_url
 
     def __call__(self, env, start_response):
         auth_token = env.get("HTTP_AUTHORIZATION")
@@ -214,8 +214,15 @@ class AuthProtocol(object):
                 token=auth_token.split()[1],
                 tenant_name=project,
                 force_new_token=True,
-                auth_url=self.keystone_url)
-            env["HTTP_X_AUTH_TOKEN"] = keystone.auth_ref["token"]["id"]
+                auth_url=self.auth_url)
+            if keystone.auth_ref is None:
+                # Ver2 doesn't create session and performs
+                # authentication automatically, but Ver3 does create session
+                # if it's not provided and doesn't perform authentication.
+                # TODO(use sessions)
+                keystone.authenticate()
+            scoped_token = keystone.auth_token
+            env["HTTP_X_AUTH_TOKEN"] = scoped_token
             return self.app(env, start_response)
         except exceptions.Unauthorized:
             if project in INTERNAL_GCUTIL_PROJECTS:
