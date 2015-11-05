@@ -154,7 +154,7 @@ class Controller(object):
                 # Ver2 doesn't create session and performs
                 # authentication automatically, but Ver3 does create session
                 # if it's not provided and doesn't perform authentication.
-                # TODO(use sessions)
+                # TODO(alexy-mr): use sessions
                 keystone.authenticate()
             client.auth_token = keystone.auth_token
             s = keystone.auth_ref.issued
@@ -223,7 +223,7 @@ class AuthProtocol(object):
                 # Ver2 doesn't create session and performs
                 # authentication automatically, but Ver3 does create session
                 # if it's not provided and doesn't perform authentication.
-                # TODO(use sessions)
+                # TODO(alexey-mr): use sessions
                 keystone.authenticate()
             scoped_token = keystone.auth_token
             env["HTTP_X_AUTH_TOKEN"] = scoped_token

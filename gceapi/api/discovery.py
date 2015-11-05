@@ -51,7 +51,7 @@ class Controller(object):
             # Ver2 doesn't create session and performs
             # authentication automatically, but Ver3 does create session
             # if it's not provided and doesn't perform authentication.
-            # TODO(use sessions)
+            # TODO(alexey-mr): use sessions
             keystone.authenticate()
         catalog = keystone.service_catalog.get_data()
         public_url = clients.get_url_from_catalog(catalog, "gceapi")

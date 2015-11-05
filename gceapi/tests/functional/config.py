@@ -81,6 +81,9 @@ OPTIONS = [
     cfg.StrOpt('region',
                default='RegionOne',
                help='GCE Region for testing'),
+    cfg.StrOpt('networking',
+               default='neutron',
+               help='Types of OS networking: neutron or nova-network'),
 
     cfg.StrOpt('machine_type',
                default='n1-standard-1',
