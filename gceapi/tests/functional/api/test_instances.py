@@ -15,15 +15,9 @@
 #    under the License.
 
 
-from string import Template
-
-from json import dumps
-from json import loads
-
 from gceapi.tests.functional import test_base
 
 
-BASE_COMPUTE_URL = '{address}/compute/v1'
 CREATE_INSTANCE_TEMPLATE = {
     "name": "${instance}",
     "description": "Testing instance",
@@ -66,30 +60,13 @@ CREATE_INSTANCE_TEMPLATE = {
         }
     ]
 }
-CREATE_NETWORK_TEMPLATE = {
-    "name": "${name}",
-    "IPv4Range": "10.240.0.0/16",
-    "description": "testing network ${name}",
-    "gatewayIPv4": "10.240.0.1"
-}
 
 
-def _insert_json_parameters(obj, **kwargs):
-    s = dumps(obj)
-    t = Template(s)
-    s = t.substitute(**kwargs)
-    return loads(s)
+def _prepare_instance_insert_parameters(**kwargs):
+    return test_base.insert_json_parameters(CREATE_INSTANCE_TEMPLATE, **kwargs)
 
 
-def _prepare_instace_insert_parameters(**kwargs):
-    return _insert_json_parameters(CREATE_INSTANCE_TEMPLATE, **kwargs)
-
-
-def _prepare_network_create_parameters(**kwargs):
-    return _insert_json_parameters(CREATE_NETWORK_TEMPLATE, **kwargs)
-
-
-class TestIntancesBase(test_base.GCETestCase):
+class TestInstancesBase(test_base.GCETestCase):
     @property
     def instances(self):
         res = self.api.compute.instances()
@@ -98,48 +75,9 @@ class TestIntancesBase(test_base.GCETestCase):
             'Null instances object, api is not built properly')
         return res
 
-    @property
-    def networks(self):
-        res = self.api.compute.networks()
-        self.assertIsNotNone(
-            res,
-            'Null networks object, api is not built properly')
-        return res
-
     def setUp(self):
-        super(TestIntancesBase, self).setUp()
-        self._instance_name = self.getUniqueString('testinst')
-        self._network_name = self.getUniqueString('testnet')
-
-    def _create_network(self):
-        cfg = self.cfg
-        project_id = cfg.project_id
-        network = self._network_name
-        kw = {
-            'name': network,
-        }
-        config = _prepare_network_create_parameters(**kw)
-        self.trace('Crete network with options {}'.format(config))
-        request = self.networks.insert(
-            project=project_id,
-            body=config)
-        result = self._execute_async_request(request, project_id)
-        self.api.validate_schema(value=result, schema_name='Operation')
-        return result
-
-    def _delete_network(self):
-        cfg = self.cfg
-        project_id = cfg.project_id
-        network = self._network_name
-        self.trace(
-            'Delete network: project_id={} network={}'.
-                format(project_id, network))
-        request = self.networks.delete(
-            project=project_id,
-            network=network)
-        result = self._execute_async_request(request, project_id)
-        self.api.validate_schema(value=result, schema_name='Operation')
-        return result
+        super(TestInstancesBase, self).setUp()
+        self._instance_name = self._rand_name('testinst')
 
     def _create_instance(self):
         cfg = self.cfg
@@ -150,39 +88,34 @@ class TestIntancesBase(test_base.GCETestCase):
             'instance': self._instance_name,
             'machine_type': cfg.machine_type,
             'image': cfg.image,
-            'network': self._network_name,
+            'network': 'default',
         }
-        config = _prepare_instace_insert_parameters(**kw)
+        config = _prepare_instance_insert_parameters(**kw)
         self.trace('Crete instance with options {}'.format(config))
         request = self.instances.insert(
             project=project_id,
             zone=zone,
             body=config)
-        result = self._execute_async_request(request, project_id, zone=zone)
-        self.api.validate_schema(value=result, schema_name='Operation')
-        return result
+        self._execute_async_request(request, project_id, zone=zone)
 
     def _delete_instance(self):
         cfg = self.cfg
         project_id = cfg.project_id
         zone = cfg.zone
         instance = self._instance_name
-        self.trace(
-            'Delete instance: project_id={} zone={} instance {}'.
-                format(project_id, zone, instance))
+        self.trace('Delete instance: project_id={} zone={} instance {}'.
+                   format(project_id, zone, instance))
         request = self.instances.delete(
             project=project_id,
             zone=zone,
             instance=instance)
-        result = self._execute_async_request(request, project_id, zone=zone)
-        self.api.validate_schema(value=result, schema_name='Operation')
-        return result
+        self._execute_async_request(request, project_id, zone=zone)
 
-    def _list(self):
+    def _list_instances(self):
         project_id = self.cfg.project_id
         zone = self.cfg.zone
-        self.trace(
-            'List instances: project_id={} zone={}'.format(project_id, zone))
+        self.trace('List instances: project_id={} zone={}'.
+                   format(project_id, zone))
         request = self.instances.list(project=project_id, zone=zone)
         self._trace_request(request)
         result = request.execute()
@@ -191,13 +124,12 @@ class TestIntancesBase(test_base.GCETestCase):
         self.assertFind(self._instance_name, result)
         return result
 
-    def _get(self):
+    def _get_instance(self):
         project_id = self.cfg.project_id
         zone = self.cfg.zone
         instance = self._instance_name
-        self.trace(
-            'Get instance: project_id={} zone={} instance={}'.
-                format(project_id, zone, instance))
+        self.trace('Get instance: project_id={} zone={} instance={}'.
+                   format(project_id, zone, instance))
         request = self.instances.get(
             project=project_id,
             zone=zone,
@@ -208,25 +140,25 @@ class TestIntancesBase(test_base.GCETestCase):
         return result
 
 
-class TestIntancesCRUD(TestIntancesBase):
+class TestInstancesCRUD(TestInstancesBase):
     def _create(self):
-        self._create_network()
         self._create_instance()
 
     def _read(self):
-        self._get()
-        self._list()
+        self._get_instance()
+        self._list_instances()
 
     def _update(self):
-        #TODO(to impl simple update cases)
+        # TODO(alexey-mr): to impl simple update cases
         pass
 
     def _delete(self):
         self._delete_instance()
-        self._delete_network()
 
     def test_crud(self):
         self._create()
+        self._add_cleanup(self._delete)
         self._read()
         self._update()
         self._delete()
+        self._remove_cleanup(self._delete)
