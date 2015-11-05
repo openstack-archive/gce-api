@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: Feodor Tersin <ftersin@hotmail.com>
+Workflow+1: Feodor Tersin <ftersin@hotmail.com>
+Code-Review+2: Andrey Pavlov <andrey.mp@gmail.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 05 Nov 2015 13:00:25 +0000
+Reviewed-on: https://review.openstack.org/239485
+Project: openstack/gce-api
+Branch: refs/heads/master
