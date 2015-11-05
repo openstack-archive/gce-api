@@ -119,7 +119,7 @@ def keystone(context):
         # Ver2 doesn't create session and performs
         # authentication automatically, but Ver3 does create session
         # if it's not provided and doesn't perform authentication.
-        # TODO(use sessions)
+        # TODO(alexey-mr): use sessions
         c.authenticate()
     return c
 

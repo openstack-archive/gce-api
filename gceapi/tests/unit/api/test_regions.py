@@ -14,19 +14,22 @@
 
 from gceapi.api import regions
 from gceapi.tests.unit.api import common
+from gceapi.tests.unit.api import fake_request
 
 
+REGION = fake_request.REGION
 EXPECTED_REGIONS = [
   {
-    "id": "1905250285734383880",
+    "id": "8220497844553564918",
     "kind": "compute#region",
     "selfLink": "http://localhost/compute/v1beta15/projects/fake_project"
-        "/regions/RegionOne",
-    "name": "RegionOne",
+                "/regions/%s" % REGION,
+    "name": REGION,
     "status": "UP",
     "zones": [
-      "http://localhost/compute/v1beta15/projects/fake_project"
-        "/zones/nova"]
+        "http://localhost/compute/v1beta15/projects/fake_project"
+        "/zones/nova"
+    ]
   },
 ]
 
@@ -46,14 +49,14 @@ class RegionsTest(common.GCEControllerTest):
         self.assertEqual(404, response.status_int)
 
     def test_get_region(self):
-        response = self.request_gce('/fake_project/regions/RegionOne')
+        response = self.request_gce('/fake_project/regions/%s' % REGION)
         expected = EXPECTED_REGIONS[0]
 
         self.assertEqual(response.json_body, expected)
 
     def test_get_region_list_filtered(self):
         response = self.request_gce("/fake_project/regions"
-                                    "?filter=name+eq+RegionOne")
+                                    "?filter=name+eq+%s" % REGION)
         expected = {
             "kind": "compute#regionList",
             "id": "projects/fake_project/regions",

@@ -60,9 +60,9 @@ now, 8-byte hashes are generated and returned for any ID to report.
 Solution: Nova GCE API just uses first key.
 
 * Default Openstack flavors are available as machine types. GCE doesn't allow symbol '.' in machine type names,
-that's why GCE API plugin converts symbols '.' into '-' in 'get' requests (e.g. request of machine types converts
-the name 'm1.tiny' into m1-tiny) and vise versa in 'put/post/delete' requests (e.g. instance creation converts
-the name 'n1-standard-1' to 'n1.standard.1').
+  that's why GCE API plugin converts symbols '.' into '-' in 'get' requests (e.g. request of machine types converts
+  the name 'm1.tiny' into m1-tiny) and vise versa in 'put/post/delete' requests (e.g. instance creation converts
+  the name 'n1-standard-1' to 'n1.standard.1').
 
 Authentication specifics
 ========================

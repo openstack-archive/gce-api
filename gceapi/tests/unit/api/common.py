@@ -58,13 +58,14 @@ COMMON_PENDING_OPERATION = {
 }
 COMMON_PENDING_OPERATION.update(COMMON_OPERATION)
 
+REGION = fake_request.REGION
 REGION_OPERATION_SPECIFIC = {
-    u'id': u'6294142421306477203',
+    u'id': u'5036531165588500177',
     u'selfLink': u'http://localhost/compute/v1beta15/projects/'
-                 'fake_project/regions/RegionOne/operations/'
-                 'operation-735d48a5-284e-4fb4-a10c-a465ac0b8888',
+                 'fake_project/regions/%s/operations/'
+                 'operation-735d48a5-284e-4fb4-a10c-a465ac0b8888' % REGION,
     u'region': u'http://localhost/compute/v1beta15/projects/'
-               'fake_project/regions/RegionOne',
+               'fake_project/regions/%s' % REGION,
 }
 
 COMMON_REGION_FINISHED_OPERATION = copy.copy(COMMON_FINISHED_OPERATION)

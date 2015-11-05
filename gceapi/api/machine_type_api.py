@@ -60,9 +60,3 @@ class API(base_api.API):
     def _prepare_item(self, item):
         item["name"] = self._to_gce(item["name"])
         return item
-
-    def _from_gce(self, name):
-        return name.replace("-", ".")
-
-    def _to_gce(self, name):
-        return name.replace(".", "-")

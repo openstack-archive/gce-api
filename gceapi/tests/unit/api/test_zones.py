@@ -14,16 +14,18 @@
 
 from gceapi.api import zones
 from gceapi.tests.unit.api import common
+from gceapi.tests.unit.api import fake_request
 
 
+REGION = fake_request.REGION
 EXPECTED_ZONES = [{
     "id": "3924463100986466035",
     "kind": "compute#zone",
     "selfLink": "http://localhost/compute/v1beta15/projects/fake_project"
-        "/zones/nova",
+                "/zones/nova",
     "name": "nova",
     "status": "UP",
-    "region": "RegionOne",
+    "region": REGION,
 }]
 
 

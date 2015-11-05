@@ -207,6 +207,14 @@ class API(object):
                 self._delete_db_item(context, item)
         return only_os_items
 
+    @staticmethod
+    def _from_gce(name):
+        return name.replace("-", ".")
+
+    @staticmethod
+    def _to_gce(name):
+        return name.replace(".", "-")
+
 
 class _CallbackReasons(object):
     check_delete = 1
