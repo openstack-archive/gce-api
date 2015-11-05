@@ -20,6 +20,19 @@ from gceapi import exception
 
 CONF = cfg.CONF
 
+# OS usual region names are in PascalCase - e.g. RegionOne,
+# GCE region name should matche the regexp [a-z](?:[-a-z0-9]{0,61}[a-z0-9])?
+_OS_GCE_MAP = {
+    'RegionOne': 'region-one',
+    'RegionTwo': 'region-two',
+    'RegionThree': 'region-three',
+    'RegionFour': 'region-four',
+}
+
+
+def _map_region_name(name):
+    return _OS_GCE_MAP.get(name, name)
+
 
 class API(base_api.API):
     """GCE Regions API
@@ -33,7 +46,7 @@ class API(base_api.API):
 
     def __init__(self, *args, **kwargs):
         super(API, self).__init__(*args, **kwargs)
-        self._REGIONS = [CONF.get("region").strip()]
+        self._REGIONS = [_map_region_name(CONF.get("region").strip())]
 
     def _get_type(self):
         return self.KIND

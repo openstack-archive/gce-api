@@ -15,39 +15,34 @@
 #    under the License.
 
 
-from keystoneclient.client import Client as KeystoneClient
-from oauth2client.client import AccessTokenCredentials
-from oauth2client.client import GoogleCredentials
+from keystoneclient import client as keystone_client
+from oauth2client import client as oauth_client
 
 
 class CredentialsProvider(object):
-    def __init__(self, supp):
-        self._supp = supp
+    def __init__(self, cfg):
+        self.cfg = cfg
 
-    def _trace(self, msg):
-        self._supp.trace(msg)
+    @staticmethod
+    def _get_app_credentials():
+        return oauth_client.GoogleCredentials.get_application_default()
 
-    def _get_app_credentials(self):
-        self._trace('Create GoogleCredentials from default app file')
-        return GoogleCredentials.get_application_default()
-
-    def _get_token_crenetials(self):
+    def _get_token_credentials(self):
         client = self._create_keystone_client()
         token = client.auth_token
-        self._trace('Created token {}'.format(token))
-        return AccessTokenCredentials(access_token=token,
-                                      user_agent='GCE test')
+        return oauth_client.AccessTokenCredentials(
+            access_token=token,
+            user_agent='GCE test')
 
     def _create_keystone_client(self):
-        cfg = self._supp.cfg
+        cfg = self.cfg
         auth_data = {
             'username': cfg.username,
             'password': cfg.password,
             'tenant_name': cfg.project_id,
             'auth_url': cfg.auth_url
         }
-        self._trace('Create keystone client, auth_data={}'.format(auth_data))
-        client = KeystoneClient(**auth_data)
+        client = keystone_client.Client(**auth_data)
         if not client.authenticate():
             raise Exception('Failed to authenticate user')
         return client
@@ -58,9 +53,9 @@ class CredentialsProvider(object):
 
     @property
     def credentials(self):
-        cred_type = self._supp.cfg.cred_type
+        cred_type = self.cfg.cred_type
         if cred_type == 'os_token':
-            return self._get_token_crenetials()
+            return self._get_token_credentials()
         elif cred_type == 'gcloud_auth':
             return self._get_app_credentials()
         else:

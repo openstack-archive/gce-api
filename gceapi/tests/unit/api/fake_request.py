@@ -17,12 +17,12 @@ from gceapi import wsgi_ext as os_wsgi
 
 
 PROJECT_ID = "4a5cc7d8893544a9babb3b890227d75e"
-
+REGION = u'region-one'
 
 FAKE_SERVICE_CATALOG = [{
     u'endpoints': [{
         u'adminURL': u'http://192.168.137.21:8774/v2/' + PROJECT_ID,
-        u'region': u'RegionOne',
+        u'region': REGION,
         u'id': u'81a8b36abc5f4945bbd1269be0423012',
         u'internalURL': u'http://192.168.137.21:8774/v2/' + PROJECT_ID,
         u'publicURL': u'http://192.168.137.21:8774/v2/' + PROJECT_ID}],
@@ -32,7 +32,7 @@ FAKE_SERVICE_CATALOG = [{
 }, {
     u'endpoints': [{
         u'adminURL': u'http://192.168.137.21:9696/',
-        u'region': u'RegionOne',
+        u'region': REGION,
         u'id': u'10a0fc598a5741c390f0d6560a89fced',
         u'internalURL': u'http://192.168.137.21:9696/',
         u'publicURL': u'http://192.168.137.21:9696/'}],
@@ -42,7 +42,7 @@ FAKE_SERVICE_CATALOG = [{
 }, {
     u'endpoints': [{
         u'adminURL': u'http://192.168.137.21:9292',
-        u'region': u'RegionOne',
+        u'region': REGION,
         u'id': u'39643060448c4c089535fce07f2d2aa4',
         u'internalURL': u'http://192.168.137.21:9292',
         u'publicURL': u'http://192.168.137.21:9292'}],
@@ -52,7 +52,7 @@ FAKE_SERVICE_CATALOG = [{
 }, {
     u'endpoints': [{
         u'adminURL': u'http://192.168.137.21:8776/v1/' + PROJECT_ID,
-        u'region': u'RegionOne',
+        u'region': REGION,
         u'id': u'494bd5333aed467092316e03b1163139',
         u'internalURL': u'http://192.168.137.21:8776/v1/' + PROJECT_ID,
         u'publicURL': u'http://192.168.137.21:8776/v1/' + PROJECT_ID}],

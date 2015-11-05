@@ -31,13 +31,14 @@ import tempest.test
 
 CONF = config.CONF
 LOG = logging.getLogger("tempest.thirdparty.gce")
+REGION_NAME = 'region-one'
 
 
 class GCEConnection(rest_client.RestClient):
 
     def __init__(self, auth_provider):
         super(GCEConnection, self).__init__(auth_provider,
-                                            "gceapi", "RegionOne")
+                                            "gceapi", REGION_NAME)
         self.service = CONF.gceapi.catalog_type
 
     def set_zone(self, zone):

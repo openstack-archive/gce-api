@@ -13,22 +13,27 @@
 # limitations under the License.
 
 from gceapi.api import addresses
-from gceapi.tests.unit.api import common
 
+from gceapi.tests.unit.api import common
+from gceapi.tests.unit.api import fake_request
+
+
+REGION = fake_request.REGION
 EXPECTED_ADDRESSES = [{
     "kind": "compute#address",
-    "id": "4065623605586261056",
+    "id": "1870839154859306350",
     "creationTimestamp": "",
     "status": "IN USE",
     "region": "http://localhost/compute/v1beta15/projects/"
-        "fake_project/regions/RegionOne",
+              "fake_project/regions/%s" % REGION,
     "name": "address-172-24-4-227",
     "description": "",
     "address": "172.24.4.227",
     "selfLink": "http://localhost/compute/v1beta15/projects/"
-        "fake_project/regions/RegionOne/addresses/address-172-24-4-227",
+                "fake_project/regions/%s/"
+                "addresses/address-172-24-4-227" % REGION,
     "users": ["http://localhost/compute/v1beta15/projects/"
-        "fake_project/zones/nova/instances/i1"]
+              "fake_project/zones/nova/instances/i1"]
 }]
 
 
@@ -40,37 +45,38 @@ class AddressesTest(common.GCEControllerTest):
 
     def test_get_address_by_invalid_name(self):
         response = self.request_gce("/fake_project/regions/"
-                                    "RegionOne/addresses/fake")
+                                    "%s/addresses/fake" % REGION)
         self.assertEqual(404, response.status_int)
 
     def test_get_address_by_name(self):
-        response = self.request_gce("/fake_project/regions/"
-                                    "RegionOne/addresses/address-172-24-4-227")
+        response = self.request_gce(
+            "/fake_project/regions/%s/addresses/address-172-24-4-227" % REGION)
 
         self.assertEqual(200, response.status_int)
         self.assertEqual(response.json_body, EXPECTED_ADDRESSES[0])
 
     def test_get_address_list_filtered(self):
-        response = self.request_gce("/fake_project/regions/RegionOne/addresses"
-                                    "?filter=name+eq+address-172-24-4-227")
+        response = self.request_gce("/fake_project/regions/%s/addresses"
+                                    "?filter=name+eq+address-172-24-4-227" %
+                                    REGION)
         expected = {
                 "kind": "compute#addressList",
-                "id": "projects/fake_project/regions/RegionOne/addresses",
+                "id": "projects/fake_project/regions/%s/addresses" % REGION,
                 "selfLink": "http://localhost/compute/v1beta15/projects"
-                    "/fake_project/regions/RegionOne/addresses",
+                            "/fake_project/regions/%s/addresses" % REGION,
                 "items": [EXPECTED_ADDRESSES[0]]
                 }
 
         self.assertEqual(response.json_body, expected)
 
     def test_get_address_list(self):
-        response = self.request_gce("/fake_project/regions/RegionOne"
-                                    "/addresses")
+        response = self.request_gce("/fake_project/regions/%s"
+                                    "/addresses" % REGION)
         expected = {
                 "kind": "compute#addressList",
-                "id": "projects/fake_project/regions/RegionOne/addresses",
+                "id": "projects/fake_project/regions/%s/addresses" % REGION,
                 "selfLink": "http://localhost/compute/v1beta15/projects"
-                    "/fake_project/regions/RegionOne/addresses",
+                            "/fake_project/regions/%s/addresses" % REGION,
                 "items": EXPECTED_ADDRESSES
                 }
 
@@ -86,7 +92,7 @@ class AddressesTest(common.GCEControllerTest):
             "selfLink": "http://localhost/compute/v1beta15/projects"
                 "/fake_project/aggregated/addresses",
             "items": {
-                "regions/RegionOne": {
+                "regions/%s" % REGION: {
                     "addresses": [EXPECTED_ADDRESSES[0]]
                 },
             }
@@ -103,7 +109,7 @@ class AddressesTest(common.GCEControllerTest):
             "selfLink": "http://localhost/compute/v1beta15/projects"
                 "/fake_project/aggregated/addresses",
             "items": {
-                "regions/RegionOne": {
+                "regions/%s" % REGION: {
                     "addresses": EXPECTED_ADDRESSES
                 },
             }
@@ -112,21 +118,21 @@ class AddressesTest(common.GCEControllerTest):
         self.assertEqual(response.json_body, expected)
 
     def test_delete_address_with_invalid_name(self):
-        response = self.request_gce("/fake_project/regions/RegionOne"
-            "/addresses/fake-address", method="DELETE")
+        response = self.request_gce(
+            "/fake_project/regions/%s/addresses/fake-address" % REGION,
+            method="DELETE")
         self.assertEqual(404, response.status_int)
 
     def test_delete_address(self):
         response = self.request_gce(
-                "/fake_project/regions/RegionOne/"
-                "addresses/address-172-24-4-227",
-                method="DELETE")
+            "/fake_project/regions/%s/addresses/address-172-24-4-227" % REGION,
+            method="DELETE")
         expected = {
             "operationType": "delete",
-            "targetId": "4065623605586261056",
+            "targetId": "1870839154859306350",
             "targetLink": "http://localhost/compute/v1beta15/projects/"
-                "fake_project/regions/RegionOne/"
-                "addresses/address-172-24-4-227",
+                "fake_project/regions/%s/"
+                "addresses/address-172-24-4-227" % REGION,
         }
         expected.update(common.COMMON_REGION_FINISHED_OPERATION)
         self.assertEqual(200, response.status_int)
@@ -136,16 +142,17 @@ class AddressesTest(common.GCEControllerTest):
         request_body = {
             "name": "fake-address",
         }
-        response = self.request_gce("/fake_project/regions/RegionOne/"
-                                    "addresses",
+        response = self.request_gce("/fake_project/regions/%s/"
+                                    "addresses" % REGION,
                                     method="POST",
                                     body=request_body)
         self.assertEqual(200, response.status_int)
         expected = {
             "operationType": "insert",
-            "targetId": "4570437344333712421",
+            "targetId": "8754519975833457287",
             "targetLink": "http://localhost/compute/v1beta15/projects/"
-                "fake_project/regions/RegionOne/addresses/fake-address",
+                          "fake_project/regions/%s/addresses/fake-address" %
+                          REGION,
         }
         expected.update(common.COMMON_REGION_FINISHED_OPERATION)
         self.assertDictEqual(expected, response.json_body)
