@@ -58,11 +58,13 @@ if [[ ! -f $TEST_CONFIG_DIR/$TEST_CONFIG ]]; then
     [[ "$?" -eq 0 ]] || { echo "Failed to prepare flavor"; exit 1; }
   fi
 
-  # create network
+  # create default network
   if [[ -n $(openstack service list | grep neutron) ]]; then
-    net_id=$(neutron net-create --tenant-id $project_id "private" | grep ' id ' | awk '{print $4}')
+    # neutron networking
+    networking="neutron"
+    net_id=$(neutron net-create --tenant-id $project_id "default" | grep ' id ' | awk '{print $4}')
     [[ -n "$net_id" ]] || { echo "net-create failed"; exit 1; }
-    subnet_id=$(neutron subnet-create --tenant-id $project_id --ip_version 4 --gateway 10.0.0.1 --name "private_subnet" $net_id 10.0.0.0/24 | grep ' id ' | awk '{print $4}')
+    subnet_id=$(neutron subnet-create --tenant-id $project_id --ip_version 4 --gateway 10.240.0.1 --name "private_subnet" $net_id 10.240.0.0/24 | grep ' id ' | awk '{print $4}')
     [[ -n "$subnet_id" ]] || { echo "subnet-create failed"; exit 1; }
     router_id=$(neutron router-create --tenant-id $project_id "private_router" | grep ' id ' | awk '{print $4}')
     [[ -n "$router_id" ]] || { echo "router-create failed"; exit 1; }
@@ -72,6 +74,10 @@ if [[ ! -f $TEST_CONFIG_DIR/$TEST_CONFIG ]]; then
     [[ -n "$public_net_id" ]] || { echo "can't find public network"; exit 1; }
     neutron router-gateway-set $router_id $public_net_id
     [[ "$?" -eq 0 ]] || { echo "router-gateway-set failed"; exit 1; }
+  else
+    # nova networking
+    networking="nova-network"
+    nova network-create "default" --fixed-range-v4 10.240.0.0/24 --gateway 10.240.0.1
   fi
 
   #create image in raw format
@@ -117,6 +123,7 @@ discovery_url=${GCE_DISCOVERY_URL:-'/discovery/v1/apis/{api}/{apiVersion}/rest'}
 # GCE resource IDs for testing
 project_id=${OS_PROJECT_NAME}
 zone=${ZONE:-'nova'}
+networking=${networking}
 region=${REGION:-'RegionOne'}
 # convert flavor name: becase GCE dowsn't allows '.' and converts '-' into '.'
 machine_type=${flavor_name//\./-}

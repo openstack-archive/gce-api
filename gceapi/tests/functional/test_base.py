@@ -14,6 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from json import dumps
+from json import loads
+from string import Template
 import time
 
 from googleapiclient.discovery import build
@@ -174,6 +177,7 @@ class GCETestCase(base.BaseTestCase):
         self.trace('Waiting for operation {} to finish...'.format(name))
         begin = time.time()
         timeout = self._supp.cfg.build_timeout
+        result = None
         while time.time() - begin < timeout:
             result = self._get_operations_request(
                 name, project, zone).execute()
@@ -186,7 +190,8 @@ class GCETestCase(base.BaseTestCase):
                 return result
             time.sleep(1)
 
-        self.fail('Request {} failed with timeout {}'.format(name, timeout))
+        self.fail('Request {} failed with timeout {},'
+                  ' latest operation status {}'.format(name, timeout, result))
 
 
 def safe_call(method):
@@ -200,3 +205,10 @@ def safe_call(method):
             self.trace('Exception  back trace {}'.format(bt))
         return None
     return wrapper
+
+
+def insert_json_parameters(obj, **kwargs):
+    s = dumps(obj)
+    t = Template(s)
+    s = t.substitute(**kwargs)
+    return loads(s)
