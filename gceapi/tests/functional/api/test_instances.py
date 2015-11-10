@@ -76,7 +76,6 @@ class TestInstancesBase(test_base.GCETestCase):
         return res
 
     def _create_instance(self, options):
-        self._add_cleanup(self._delete_instance, options['name'])
         cfg = self.cfg
         project_id = cfg.project_id
         zone = cfg.zone
@@ -86,6 +85,7 @@ class TestInstancesBase(test_base.GCETestCase):
             project=project_id,
             zone=zone,
             body=config)
+        self._add_cleanup(self._delete_instance, options['name'])
         self._execute_async_request(request, project_id, zone=zone)
 
     def _delete_instance(self, name):
@@ -98,8 +98,8 @@ class TestInstancesBase(test_base.GCETestCase):
             project=project_id,
             zone=zone,
             instance=name)
-        self._remove_cleanup(self._delete_instance, name)
         self._execute_async_request(request, project_id, zone=zone)
+        self._remove_cleanup(self._delete_instance, name)
 
     def _list_instances(self):
         project_id = self.cfg.project_id

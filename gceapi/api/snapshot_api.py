@@ -80,7 +80,7 @@ class API(base_api.API):
 
         operation_util.start_operation(context, self._get_add_item_progress)
         snapshot = client.volume_snapshots.create(
-            volumes[0].id, True, name, body["description"])
+            volumes[0].id, True, name, body.get("description"))
         operation_util.set_item_id(context, snapshot.id, self.KIND)
 
         return self._prepare_item(client, utils.to_dict(snapshot))

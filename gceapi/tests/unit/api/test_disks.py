@@ -23,7 +23,7 @@ EXPECTED_DISK_1 = {
                       "fake_project/global/snapshots/fake-snapshot",
     "kind": "compute#disk",
     "name": "fake-disk-1",
-    "sizeGb": 2,
+    "sizeGb": '2',
     "sourceSnapshotId": "991cda9c-28bd-420f-8432-f5159def85d6",
     "zone": "http://localhost/compute/v1beta15/projects/"
             "fake_project/zones/nova",
@@ -35,7 +35,7 @@ EXPECTED_DISK_1 = {
 }
 EXPECTED_DISK_2 = {
     "status": "READY",
-    "sizeGb": 1,
+    "sizeGb": '1',
     "kind": "compute#disk",
     "name": "fake-disk-2",
     "zone": "http://localhost/compute/v1beta15/projects/"
@@ -51,7 +51,7 @@ EXPECTED_DISK_2 = {
 }
 EXPECTED_DISK_3 = {
     "status": "READY",
-    "sizeGb": 3,
+    "sizeGb": '3',
     "kind": "compute#disk",
     "name": "fake-disk-3",
     "zone": "http://localhost/compute/v1beta15/projects/"
@@ -64,7 +64,7 @@ EXPECTED_DISK_3 = {
 }
 NEW_DISK = {
     "status": "READY",
-    "sizeGb": 15,
+    "sizeGb": '15',
     "kind": "compute#disk",
     "name": "new-disk",
     "zone": "http://localhost/compute/v1beta15/projects/"
@@ -73,13 +73,12 @@ NEW_DISK = {
     "id": "5151144363316117590",
     "selfLink": "http://localhost/compute/v1beta15/projects/"
                 "fake_project/zones/nova/disks/new-disk",
-    "description": None,
 }
 NEW_IMAGE_DISK = {
     "status": "READY",
     "kind": "compute#disk",
     "name": "new-image-disk",
-    "sizeGb": 1,
+    "sizeGb": '1',
     "sourceImage": "http://localhost/compute/v1beta15/projects/"
                    "fake_project/global/images/fake-image-2",
     "sourceImageId": "5721131091780319468",
@@ -97,7 +96,7 @@ NEW_SN_DISK = {
                       "fake_project/global/snapshots/fake-snapshot",
     "kind": "compute#disk",
     "name": "new-sn-disk",
-    "sizeGb": 25,
+    "sizeGb": '25',
     "sourceSnapshotId": "991cda9c-28bd-420f-8432-f5159def85d6",
     "zone": "http://localhost/compute/v1beta15/projects/"
             "fake_project/zones/nova",

@@ -36,7 +36,6 @@ class TestAddressesBase(test_base.GCETestCase):
         return res
 
     def _create_address(self, options):
-        self._add_cleanup(self._delete_address, options['name'])
         cfg = self.cfg
         project_id = cfg.project_id
         region = cfg.region
@@ -46,6 +45,7 @@ class TestAddressesBase(test_base.GCETestCase):
             project=project_id,
             region=region,
             body=config)
+        self._add_cleanup(self._delete_address, options['name'])
         self._execute_async_request(request, project_id, region=region)
 
     def _delete_address(self, name):
@@ -58,8 +58,8 @@ class TestAddressesBase(test_base.GCETestCase):
             project=project_id,
             region=region,
             address=name)
-        self._remove_cleanup(self._delete_address, name)
         self._execute_async_request(request, project_id, region=region)
+        self._remove_cleanup(self._delete_address, name)
 
     def _list_addresses(self):
         cfg = self.cfg

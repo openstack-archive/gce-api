@@ -52,6 +52,10 @@ gce_opts = [
     cfg.StrOpt('region',
         default='RegionOne',
         help='Region of this service'),
+    cfg.IntOpt('default_volume_size_gb',
+        default=500,
+        help='Default new volume size if sizeGb, sourceSnapshot and '
+             'sourceImage are not provided'),
     ]
 
 CONF = cfg.CONF

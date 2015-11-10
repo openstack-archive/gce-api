@@ -18,6 +18,7 @@ import json
 import string
 import time
 import traceback
+import urlparse
 
 from googleapiclient import discovery
 from googleapiclient import schema
@@ -32,6 +33,8 @@ from gceapi.tests.functional import credentials
 
 CONF = config.CONF.gce
 LOG = logging.getLogger("gceapi")
+API_NAME = 'compute'
+API_VER = 'v1'
 
 
 def trace(msg):
@@ -93,19 +96,10 @@ class GCEApi(object):
         url = self._discovery_url
         trace('Build Google compute api with discovery url {}'.format(url))
         self._compute = discovery.build(
-            'compute', 'v1',
+            API_NAME,
+            API_VER,
             credentials=credentials,
             discoveryServiceUrl=url
-        )
-
-    @property
-    def _discovery_url(self):
-        cfg = CONF
-        return '{}://{}:{}{}'.format(
-            cfg.protocol,
-            cfg.host,
-            cfg.port,
-            cfg.discovery_url
         )
 
     @property
@@ -113,24 +107,68 @@ class GCEApi(object):
         assert(self._compute is not None)
         return self._compute
 
-    @property
-    def base_url(self):
-        cfg = CONF
-        return '{}://{}:{}'.format(
-            cfg.protocol,
-            cfg.host,
-            cfg.port
-        )
-
     def validate_schema(self, value, schema_name):
         schema = self._schema.get(schema_name)
         jsonschema.validate(value, schema, resolver=self._scheme_ref_resolver)
+
+    @staticmethod
+    def _is_absolute_url(url):
+        return bool(urlparse.urlparse(url).netloc)
+
+    @staticmethod
+    def _is_standard_port(protocol, port):
+        _map = {'http': 80, 'https': 443}
+        return _map[protocol] == port
+
+    @property
+    def _host_url(self):
+        cfg = CONF
+        if self._is_standard_port(cfg.protocol, cfg.port):
+            return '{}://{}'.format(cfg.protocol, cfg.host)
+        return '{}://{}:{}'.format(cfg.protocol, cfg.host, cfg.port)
+
+    @property
+    def _discovery_url(self):
+        t = '{}{}' if CONF.discovery_url.startswith('/') else '{}/{}'
+        return t.format(self._host_url, CONF.discovery_url)
+
+    @property
+    def _api_url(self):
+        return '{}/{}/{}'.format(self._host_url, API_NAME, API_VER)
+
+    @property
+    def project_url(self):
+        return '{}/projects/{}'.format(self._api_url, CONF.project_id)
+
+    def get_zone_url(self, resource=None, zone=None):
+        z = zone
+        if z is None:
+            z = CONF.zone
+        if not self._is_absolute_url(z):
+            t = '{}/{}' if z.startswith('zones/') else '{}/zones/{}'
+            z = t.format(self.project_url, z)
+        if resource is None:
+            return z
+        return '{}/{}'.format(z, resource)
+
+    def get_global_url(self, resource):
+        if self._is_absolute_url(resource):
+            return resource
+        t = '{}/{}' if resource.startswith('projects/') else '{}/projects/{}'
+        return t.format(self._api_url, resource)
+
+    def get_project_url(self, resource):
+        if self._is_absolute_url(resource):
+            return resource
+        t = '{}/{}'
+        return t.format(self.project_url, resource)
 
 
 class GCETestCase(base.BaseTestCase):
     @property
     def api(self):
-        assert(self._api is not None)
+        if self._api is None:
+            self.fail('Api object is None - test is not initialized properly')
         return self._api
 
     @property
@@ -147,21 +185,29 @@ class GCETestCase(base.BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cp = credentials.CredentialsProvider(CONF)
-        cls._api = GCEApi(cp)
+        cls._credentials_provider = credentials.CredentialsProvider(CONF)
+        cls._api = GCEApi(cls._credentials_provider)
         cls._api.init()
         super(GCETestCase, cls).setUpClass()
 
-    def assertFind(self, item, items_list):
-        key = 'items'
+    def assertFind(self, item, items_list, key='items'):
         items = []
         if key in items_list:
             items = items_list[key]
             for i in items:
                 if i['name'] == item:
-                    return
+                    return i
         self.fail(
             'There is no required item {} in the list {}'.format(item, items))
+
+    def assertObject(self, expected, observed):
+        self.trace('Validate object: \n\texpected: {}\n\tobserved: {}'.
+                   format(expected, observed))
+        self.assertDictContainsSubset(expected, observed)
+
+    @property
+    def is_real_gce(self):
+        return self._credentials_provider.is_google_auth
 
     def _get_operations_request(self, name, project, zone, region):
         if zone is not None:
@@ -197,6 +243,7 @@ class GCETestCase(base.BaseTestCase):
         self.trace('Waiting for operation {} to finish...'.format(name))
         begin = time.time()
         timeout = self.cfg.build_timeout
+        interval = self.cfg.build_interval
         result = None
         while time.time() - begin < timeout:
             result = self._get_operations_request(
@@ -209,8 +256,7 @@ class GCETestCase(base.BaseTestCase):
                 else:
                     self.trace("Request {} done successfully".format(name))
                 return
-            time.sleep(1)
-
+            time.sleep(interval)
         self.fail('Request {} failed with timeout {},'
                   ' latest operation status {}'.format(name, timeout, result))
 

@@ -29,10 +29,12 @@ class Controller(gce_common.Controller):
         result_dict = {
             "creationTimestamp": self._format_date(snapshot["created_at"]),
             "status": snapshot["status"],
-            "diskSizeGb": snapshot["size"],
+            "diskSizeGb": u"{}".format(snapshot["size"]),
             "name": snapshot["name"],
-            "description": snapshot["display_description"],
-            }
+        }
+        description = snapshot["display_description"]
+        if description:
+            result_dict["description"] = description
         disk = snapshot.get("disk")
         if disk is not None:
             result_dict["sourceDisk"] = self._qualify(

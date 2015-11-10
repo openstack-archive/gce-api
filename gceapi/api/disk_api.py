@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from oslo_config import cfg
+
 from gceapi.api import base_api
 from gceapi.api import clients
 from gceapi.api import image_api
@@ -22,6 +24,7 @@ from gceapi.api import utils
 from gceapi import exception
 
 
+CONF = cfg.CONF
 GB = 1024 ** 3
 
 
@@ -131,6 +134,9 @@ class API(base_api.API):
             image_size_in_gb = (int(image['size']) + GB - 1) / GB
             if not sizeGb or sizeGb < image_size_in_gb:
                 sizeGb = image_size_in_gb
+        else:
+            if not sizeGb:
+                sizeGb = CONF.default_volume_size_gb
 
         operation_util.start_operation(context, self._get_add_item_progress)
         volume = client.volumes.create(

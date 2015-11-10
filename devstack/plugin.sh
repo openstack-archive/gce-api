@@ -173,6 +173,10 @@ function configure_gceapi {
     iniset $GCEAPI_CONF_FILE DEFAULT region $REGION_NAME
     iniset $GCEAPI_CONF_FILE DEFAULT keystone_url "$OS_AUTH_URL"
 
+    # set default new empty disk size to 1GB, default production is 500
+    # that corresponds to default Google pd-standard disk-type
+    iniset $GCEAPI_CONF_FILE DEFAULT default_volume_size_gb 1
+
     iniset $GCEAPI_CONF_FILE keystone_authtoken admin_tenant_name $SERVICE_TENANT_NAME
     iniset $GCEAPI_CONF_FILE keystone_authtoken admin_user $GCEAPI_ADMIN_USER
     iniset $GCEAPI_CONF_FILE keystone_authtoken admin_password $SERVICE_PASSWORD
