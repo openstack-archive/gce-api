@@ -32,9 +32,11 @@ class Controller(gce_common.Controller):
                 "creationTimestamp": self._format_date(volume["created_at"]),
                 "status": volume["status"],
                 "name": volume["display_name"],
-                "description": volume["display_description"],
-                "sizeGb": volume["size"],
+                "sizeGb": u"{}".format(volume["size"]),
                 }
+        description = volume["display_description"]
+        if description is not None:
+            result_dict["description"] = description
         snapshot = volume["snapshot"]
         if snapshot:
             result_dict["sourceSnapshot"] = self._qualify(request,
@@ -62,7 +64,13 @@ class Controller(gce_common.Controller):
         context = self._get_context(req)
         operation_util.init_operation(context, "createSnapshot",
                                       self._type_name, id, scope)
-        snapshot_api.API().add_item(context, body, scope)
+        snapshot = snapshot_api.API().add_item(context, body, scope)
+        # TODO(alexey-mr): workaround: have to set item id here
+        # snapshot_api.API().add_item set_item_id has no effect because
+        # of different type_name disk vs. snapshot
+        # but snapshot type_name can't be used in init_operation because
+        # targetLink and targetId should point to disk object
+        operation_util.set_item_id(context, snapshot['id'], self._type_name)
 
 
 def create_resource():

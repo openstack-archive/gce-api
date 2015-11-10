@@ -127,7 +127,7 @@ networking=${networking}
 region=${REGION:-'region-one'}
 # convert flavor name: becase GCE dowsn't allows '.' and converts '-' into '.'
 machine_type=${flavor_name//\./-}
-image=${os_image_name}
+image=${OS_PROJECT_NAME}/global/images/${os_image_name}
 EOF"
 fi
 

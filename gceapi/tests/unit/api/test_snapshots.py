@@ -24,7 +24,7 @@ EXPECTED_SNAPSHOTS = [{
     "id": "8386122516930476063",
     "creationTimestamp": "2013-08-14T12:32:28Z",
     "status": "READY",
-    "diskSizeGb": 2,
+    "diskSizeGb": "2",
     "sourceDisk": "http://localhost/compute/v1beta15/projects/"
         "fake_project/zones/nova/disks/fake-disk-3",
     "name": "fake-snapshot",
@@ -111,7 +111,7 @@ class SnapshotsTest(common.GCEControllerTest):
             "operationType": "createSnapshot",
             "targetId": "9202387718698825406",
             "targetLink": "http://localhost/compute/v1beta15/projects/"
-                "fake_project/zones/nova/disks/fake-disk-3",
+                          "fake_project/zones/nova/disks/fake-disk-3",
         }
         expected.update(common.COMMON_ZONE_PENDING_OPERATION)
         self.assertDictEqual(expected, response.json_body)

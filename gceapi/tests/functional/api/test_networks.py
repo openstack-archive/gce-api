@@ -39,13 +39,13 @@ class TestNetworksBase(test_base.GCETestCase):
         return res
 
     def _create_network(self, options):
-        self._add_cleanup(self._delete_network, options['name'])
         project_id = self.cfg.project_id
         config = _prepare_network_create_parameters(**options)
         self.trace('Crete network with options {}'.format(config))
         request = self.networks.insert(
             project=project_id,
             body=config)
+        self._add_cleanup(self._delete_network, options['name'])
         self._execute_async_request(request, project_id)
 
     def _delete_network(self, name):
@@ -56,8 +56,8 @@ class TestNetworksBase(test_base.GCETestCase):
         request = self.networks.delete(
             project=project_id,
             network=name)
-        self._remove_cleanup(self._delete_network, name)
         self._execute_async_request(request, project_id)
+        self._remove_cleanup(self._delete_network, name)
 
     def _list_networks(self):
         project_id = self.cfg.project_id
