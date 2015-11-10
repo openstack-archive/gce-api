@@ -52,6 +52,10 @@ class CredentialsProvider(object):
         return self._create_keystone_client()
 
     @property
+    def is_google_auth(self):
+        return self.cfg.cred_type == 'gcloud_auth'
+
+    @property
     def credentials(self):
         cred_type = self.cfg.cred_type
         if cred_type == 'os_token':

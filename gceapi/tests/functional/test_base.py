@@ -18,6 +18,7 @@ import json
 import string
 import time
 import traceback
+import urlparse
 
 from googleapiclient import discovery
 from googleapiclient import schema
@@ -32,6 +33,8 @@ from gceapi.tests.functional import credentials
 
 CONF = config.CONF.gce
 LOG = logging.getLogger("gceapi")
+API_NAME = 'compute'
+API_VER = 'v1'
 
 
 def trace(msg):
@@ -93,7 +96,8 @@ class GCEApi(object):
         url = self._discovery_url
         trace('Build Google compute api with discovery url {}'.format(url))
         self._compute = discovery.build(
-            'compute', 'v1',
+            API_NAME,
+            API_VER,
             credentials=credentials,
             discoveryServiceUrl=url
         )
@@ -114,23 +118,58 @@ class GCEApi(object):
         return self._compute
 
     @property
-    def base_url(self):
+    def api_url(self):
         cfg = CONF
-        return '{}://{}:{}'.format(
+        return '{}://{}/{}/{}'.format(
             cfg.protocol,
             cfg.host,
-            cfg.port
-        )
+            API_NAME,
+            API_VER)
 
     def validate_schema(self, value, schema_name):
         schema = self._schema.get(schema_name)
         jsonschema.validate(value, schema, resolver=self._scheme_ref_resolver)
 
+    @property
+    def project_url(self):
+        return '{}/projects/{}'.format(self.api_url, CONF.project_id)
+
+    def get_zone_url(self, zone=None):
+        z = zone
+        if z is None:
+            z = CONF.zone
+        if self.is_absolute(z):
+            return z
+        t = '{}/{}' if z.startswith('zones/') else '{}/zones/{}'
+        return t.format(self.project_url, z)
+
+    def get_resource_url(self, resource, zone=None):
+        if self.is_absolute(resource):
+            return resource
+        return '{}/{}'.format(self.get_zone_url(zone=zone), resource)
+
+    def get_global_url(self, resource):
+        if self.is_absolute(resource):
+            return resource
+        t = '{}/{}' if resource.startswith('projects/') else '{}/projects/{}'
+        return t.format(self.api_url, resource)
+
+    def get_project_url(self, resource):
+        if self.is_absolute(resource):
+            return resource
+        t = '{}/{}'
+        return t.format(self.project_url, resource)
+
+    @staticmethod
+    def is_absolute(url):
+        return bool(urlparse.urlparse(url).netloc)
+
 
 class GCETestCase(base.BaseTestCase):
     @property
     def api(self):
-        assert(self._api is not None)
+        if self._api is None:
+            self.fail('Api object is None - test is not initialized properly')
         return self._api
 
     @property
@@ -147,21 +186,37 @@ class GCETestCase(base.BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cp = credentials.CredentialsProvider(CONF)
-        cls._api = GCEApi(cp)
+        cls._credentials_provider = credentials.CredentialsProvider(CONF)
+        cls._api = GCEApi(cls._credentials_provider)
         cls._api.init()
         super(GCETestCase, cls).setUpClass()
 
-    def assertFind(self, item, items_list):
-        key = 'items'
+    def assertFind(self, item, items_list, key='items'):
         items = []
         if key in items_list:
             items = items_list[key]
             for i in items:
                 if i['name'] == item:
-                    return
+                    return i
         self.fail(
             'There is no required item {} in the list {}'.format(item, items))
+
+    def assertObject(self, expected, observed):
+        self.trace('Validate object: \n\texpected: {}\n\tobserved: {}'.
+                   format(expected, observed))
+        observed_keys = observed.keys()
+        for item in expected.items():
+            key = item[0]
+            value = item[1]
+            if value is None:
+                self.assertNotIn(key, observed_keys)
+            else:
+                self.assertIn(key, observed_keys)
+                self.assertEqual(value, observed[key])
+
+    @property
+    def is_real_gce(self):
+        return self._credentials_provider.is_google_auth
 
     def _get_operations_request(self, name, project, zone, region):
         if zone is not None:
