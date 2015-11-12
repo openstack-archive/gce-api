@@ -14,16 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 from gceapi.tests.functional import test_base
 
 
-CREATE_ADDRESS_TEMPLATE = {
-    "name": "${name}",
-}
-
-
-def _prepare_address_create_parameters(**kwargs):
-    return test_base.insert_json_parameters(CREATE_ADDRESS_TEMPLATE, **kwargs)
+IPV4_PATTERN = ('^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}'
+                '(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
 
 
 class TestAddressesBase(test_base.GCETestCase):
@@ -39,12 +36,11 @@ class TestAddressesBase(test_base.GCETestCase):
         cfg = self.cfg
         project_id = cfg.project_id
         region = cfg.region
-        config = _prepare_address_create_parameters(**options)
-        self.trace('Crete address with options {}'.format(config))
+        self.trace('Crete address with options {}'.format(options))
         request = self.addresses.insert(
             project=project_id,
             region=region,
-            body=config)
+            body=options)
         self._add_cleanup(self._delete_address, options['name'])
         self._execute_async_request(request, project_id, region=region)
 
@@ -61,7 +57,7 @@ class TestAddressesBase(test_base.GCETestCase):
         self._execute_async_request(request, project_id, region=region)
         self._remove_cleanup(self._delete_address, name)
 
-    def _list_addresses(self):
+    def _list_addresses(self, filter=None):
         cfg = self.cfg
         project_id = cfg.project_id
         region = cfg.region
@@ -69,7 +65,8 @@ class TestAddressesBase(test_base.GCETestCase):
                    format(project_id, region))
         request = self.addresses.list(
             project=project_id,
-            region=region)
+            region=region,
+            filter=filter)
         result = request.execute()
         self.trace('Addresses: {}'.format(result))
         self.api.validate_schema(value=result, schema_name='AddressList')
@@ -90,8 +87,31 @@ class TestAddressesBase(test_base.GCETestCase):
         self.api.validate_schema(value=result, schema_name='Address')
         return result
 
+    def _get_expected_address(self, options):
+        address = copy.deepcopy(options)
+        address['kind'] = u'compute#address'
+        if 'status' not in options:
+            address['status'] = u'RESERVED'
+        if 'selfLink' not in options:
+            address_link = 'addresses/{}'.format(address['name'])
+            address['selfLink'] = self.api.get_region_url(address_link)
+        if 'region' not in options:
+            address['region'] = self.api.get_region_url()
+        if 'address' not in options:
+            address['address'] = IPV4_PATTERN
+        if 'id' not in options:
+            address['id'] = '[0-9]{1,32}'
+        return address
 
-class TestAddressesCRUD(TestAddressesBase):
+    def _ensure_address_created(self, options):
+        name = options['name']
+        address = self._get_address(name)
+        expected_address = self._get_expected_address(options)
+        self.assertObject(expected_address, address)
+        return address
+
+
+class TestAddressess(TestAddressesBase):
     @property
     def addresses(self):
         res = self.api.compute.addresses()
@@ -101,29 +121,46 @@ class TestAddressesCRUD(TestAddressesBase):
         return res
 
     def setUp(self):
-        super(TestAddressesCRUD, self).setUp()
-        self._address_name = self._rand_name('testaddr')
+        super(TestAddressess, self).setUp()
 
-    def _create(self):
+    def test_create_delete_address(self):
+        name = self._rand_name('testaddr')
         options = {
-            'name': self._address_name
+            'name': name
         }
         self._create_address(options)
+        self._ensure_address_created(options)
+        self._delete_address(name)
 
-    def _read(self):
-        result = self._get_address(self._address_name)
-        self.assertEqual(self._address_name, result['name'])
+    def test_list_addresses(self):
+        name = self._rand_name('testaddr')
+        options = {
+            'name': name
+        }
+        self._create_address(options)
+        address = self._ensure_address_created(options)
         result = self._list_addresses()
-        self.assertFind(self._address_name, result)
+        result = self.assertFind(name, result)
+        self.assertObject(address, result)
+        self._delete_address(name)
 
-    def _update(self):
-        pass
-
-    def _delete(self):
-        self._delete_address(self._address_name)
-
-    def test_crud(self):
-        self._create()
-        self._read()
-        self._update()
-        self._delete()
+    def test_list_addresses_by_filter_name(self):
+        # Goole's free evaluation account quote is 1 external IP
+        count = 3 if not self.is_real_gce else 1
+        names = [self._rand_name('testaddr') for _ in range(0, count)]
+        # prepare resources
+        addresses = dict()
+        for name in names:
+            options = {
+                'name': name
+            }
+            self._create_address(options)
+            addresses[name] = self._ensure_address_created(options)
+        # do list by filter test
+        for name in names:
+            result = self._list_addresses(filter='name eq {}'.format(name))
+            self.assertEqual(1, len(result['items']))
+            self.assertObject(addresses[name], result['items'][0])
+        # delete resources
+        for name in names:
+            self._delete_address(name)

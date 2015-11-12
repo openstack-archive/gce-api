@@ -15,6 +15,7 @@
 #    under the License.
 
 import json
+import re
 import string
 import time
 import traceback
@@ -151,6 +152,17 @@ class GCEApi(object):
             return z
         return '{}/{}'.format(z, resource)
 
+    def get_region_url(self, resource=None, region=None):
+        r = region
+        if r is None:
+            r = CONF.region
+        if not self._is_absolute_url(r):
+            t = '{}/{}' if r.startswith('regions/') else '{}/regions/{}'
+            r = t.format(self.project_url, r)
+        if resource is None:
+            return r
+        return '{}/{}'.format(r, resource)
+
     def get_global_url(self, resource):
         if self._is_absolute_url(resource):
             return resource
@@ -200,10 +212,28 @@ class GCETestCase(base.BaseTestCase):
         self.fail(
             'There is no required item {} in the list {}'.format(item, items))
 
-    def assertObject(self, expected, observed):
-        self.trace('Validate object: \n\texpected: {}\n\tobserved: {}'.
-                   format(expected, observed))
-        self.assertDictContainsSubset(expected, observed)
+    def assertObject(self, expected, actual):
+        self.trace('Validate object: \n\texpected: {}\n\tactual: {}'.
+                   format(expected, actual))
+        # aka self.assertDictContainsSubset(expected, observed) but
+        # with regexp matching instead of '=='
+        missing = []
+        mismatched = []
+        for key, value in expected.items():
+            if key not in actual:
+                missing.append(key)
+            elif not re.compile(value).match(actual[key]):
+                msg = 'key {}: actual={} is not match to expected={}'
+                mismatched.append(msg.format(key, actual[key], value))
+        err = ''
+        if missing:
+            err = 'Missing: {}'.format(','.join(m for m in missing))
+        if mismatched:
+            if err:
+                err += '; '
+            err += 'Mismatched values: {}'.format(','.join(mismatched))
+        if err:
+            self.fail(err)
 
     @property
     def is_real_gce(self):
