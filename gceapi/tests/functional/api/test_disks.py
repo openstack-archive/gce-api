@@ -59,7 +59,7 @@ class TestSnapshotsBase(test_base.GCETestCase):
         self.api.validate_schema(value=result, schema_name='Snapshot')
         return result
 
-    def _get_expected_snapshot_fields(self, disk_name, options):
+    def _get_expected_snapshot(self, disk_name, options):
         snapshot = copy.deepcopy(options)
         # fill defaults if needed
         if 'kind' not in snapshot:
@@ -76,7 +76,7 @@ class TestSnapshotsBase(test_base.GCETestCase):
 
     def _ensure_snapshot_created(self, disk_name, options):
         name = options['name']
-        snapshot = self._get_expected_snapshot_fields(disk_name, options)
+        snapshot = self._get_expected_snapshot(disk_name, options)
         # get object from server and check properties
         result = self._get_snapshot(name)
         self.assertObject(snapshot, result)
@@ -149,7 +149,7 @@ class TestDiskBase(TestSnapshotsBase):
         self.api.validate_schema(value=result, schema_name='Disk')
         return result
 
-    def _get_expected_disk_fields(self, options, source_image=None):
+    def _get_expected_disk(self, options, source_image=None):
         disk = copy.deepcopy(options)
         # fill defaults if needed
         if 'kind' not in disk:
@@ -175,7 +175,7 @@ class TestDiskBase(TestSnapshotsBase):
 
     def _ensure_disk_created(self, options, source_image=None):
         name = options['name']
-        disk = self._get_expected_disk_fields(options, source_image)
+        disk = self._get_expected_disk(options, source_image)
         # get object from server and check properties
         result = self._get_disk(name)
         self.assertObject(disk, result)
