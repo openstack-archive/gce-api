@@ -212,26 +212,62 @@ class GCETestCase(base.BaseTestCase):
         self.fail(
             'There is no required item {} in the list {}'.format(item, items))
 
-    def assertObject(self, expected, actual):
-        self.trace('Validate object: \n\texpected: {}\n\tactual: {}'.
-                   format(expected, actual))
-        # aka self.assertDictContainsSubset(expected, observed) but
-        # with regexp matching instead of '=='
+    def _match_values(self, key, expected, actual):
+        missing = []
+        mismatched = []
+        if isinstance(expected, dict) and isinstance(actual, dict):
+            missing, mismatched = self._match_objects(expected,
+                                                      actual,
+                                                      root_key=key)
+        elif isinstance(expected, list) and isinstance(actual, list):
+            expected.sort()
+            actual.sort()
+            if len(expected) > len(actual):
+                _missing = [str(i) for i in expected[len(actual):]]
+                msg = 'key={}: subitems: {}'.format(key, ', '.join(_missing))
+                missing.append(msg)
+            for e, a in zip(expected, actual):
+                _missing, _mismatched = self._match_values(key, e, a)
+                missing.extend(_missing)
+                mismatched.extend(_mismatched)
+        elif isinstance(expected, (str, unicode, buffer)):
+            if not re.compile(expected).match(str(actual)):
+                msg = 'key={}: actual={}: expected_regexp={}'
+                mismatched.append(msg.format(key, actual, expected))
+        elif type(expected) == type(actual):
+            if expected != actual:
+                msg = 'key={}: actual={}: expected={}'
+                mismatched.append(msg.format(key, actual, expected))
+        else:
+            msg = 'key={}: mismatched object types: actual={}: expected={}'
+            mismatched.append(msg.format(key, type(actual), type(expected)))
+        return missing, mismatched
+
+    def _match_objects(self, expected, actual, root_key=None):
         missing = []
         mismatched = []
         for key, value in expected.items():
             if key not in actual:
                 missing.append(key)
-            elif not re.compile(value).match(actual[key]):
-                msg = 'key {}: actual={} is not match to expected={}'
-                mismatched.append(msg.format(key, actual[key], value))
+            else:
+                _key = '{}/{}'.format(root_key, key) if root_key else key
+                _missing, _mismatched = self._match_values(_key,
+                                                           value, actual[key])
+                missing.extend(_missing)
+                mismatched.extend(_mismatched)
+        return missing, mismatched
+
+    def assertObject(self, expected, actual):
+        self.trace('Validate object: \n\texpected: {}\n\tactual: {}'.
+                   format(expected, actual))
+        missing, mismatched = self._match_objects(expected, actual)
         err = ''
         if missing:
-            err = 'Missing: {}'.format(','.join(m for m in missing))
+            err = 'Missing: {}'.format(', '.join(m for m in missing))
         if mismatched:
             if err:
                 err += '; '
-            err += 'Mismatched values: {}'.format(','.join(mismatched))
+            err += 'Mismatched values: {}'.format(', '.join(mismatched))
         if err:
             self.fail(err)
 

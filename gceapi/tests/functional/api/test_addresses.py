@@ -145,9 +145,7 @@ class TestAddressess(TestAddressesBase):
         self._delete_address(name)
 
     def test_list_addresses_by_filter_name(self):
-        # Goole's free evaluation account quote is 1 external IP
-        count = 3 if not self.is_real_gce else 1
-        names = [self._rand_name('testaddr') for _ in range(0, count)]
+        names = [self._rand_name('testaddr') for _ in range(0, 3)]
         # prepare resources
         addresses = dict()
         for name in names:

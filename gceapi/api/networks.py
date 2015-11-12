@@ -30,8 +30,9 @@ class Controller(gce_common.Controller):
             "gatewayIPv4": network.get("gatewayIPv4", ""),
             "creationTimestamp": network.get("creationTimestamp", ""),
         }
-        if "description" in network:
-            result_dict["description"] = network["description"]
+        description = network.get("description")
+        if description is not None:
+            result_dict["description"] = description
 
         return self._format_item(request, result_dict, scope)
 

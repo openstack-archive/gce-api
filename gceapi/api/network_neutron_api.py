@@ -86,7 +86,7 @@ class API(base_api.API):
         client.delete_network(network["id"])
 
     def add_item(self, context, name, body, scope=None):
-        ip_range = body['IPv4Range']
+        ip_range = body.get('IPv4Range', CONF.default_network_ip_range)
         gateway = body.get('gatewayIPv4')
         if gateway is None:
             network_cidr = netaddr.IPNetwork(ip_range)
@@ -117,7 +117,8 @@ class API(base_api.API):
             result_data = client.create_subnet(subnet_body)
             subnet_id = result_data["subnet"]["id"]
         network = self._prepare_network(client, network)
-        network["description"] = body.get("description")
+        if 'description' in body:
+            network["description"] = body["description"]
         network = self._add_db_item(context, network)
         self._process_callbacks(
             context, base_api._callback_reasons.post_add,

@@ -56,6 +56,9 @@ gce_opts = [
         default=500,
         help='Default new volume size if sizeGb, sourceSnapshot and '
              'sourceImage are not provided'),
+    cfg.StrOpt('default_network_ip_range',
+        default='10.240.0.0/16',
+        help='Default new network ip range if it is not provided'),
     ]
 
 CONF = cfg.CONF

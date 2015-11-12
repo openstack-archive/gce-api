@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import netaddr
+from oslo_config import cfg
 
 from gceapi.api import base_api
 from gceapi.api import clients
@@ -20,6 +21,9 @@ from gceapi.api import operation_util
 from gceapi.api import utils
 from gceapi import exception
 from gceapi.i18n import _
+
+
+CONF = cfg.CONF
 
 
 class API(base_api.API):
@@ -68,7 +72,7 @@ class API(base_api.API):
         client.networks.delete(network["id"])
 
     def add_item(self, context, name, body, scope=None):
-        ip_range = body['IPv4Range']
+        ip_range = body.get('IPv4Range', CONF.default_network_ip_range)
         gateway = body.get('gatewayIPv4')
         if gateway is None:
             network_cidr = netaddr.IPNetwork(ip_range)

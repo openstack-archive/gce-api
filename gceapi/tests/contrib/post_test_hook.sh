@@ -64,7 +64,7 @@ if [[ ! -f $TEST_CONFIG_DIR/$TEST_CONFIG ]]; then
     networking="neutron"
     net_id=$(neutron net-create --tenant-id $project_id "default" | grep ' id ' | awk '{print $4}')
     [[ -n "$net_id" ]] || { echo "net-create failed"; exit 1; }
-    subnet_id=$(neutron subnet-create --tenant-id $project_id --ip_version 4 --gateway 10.240.0.1 --name "private_subnet" $net_id 10.240.0.0/24 | grep ' id ' | awk '{print $4}')
+    subnet_id=$(neutron subnet-create --tenant-id $project_id --ip_version 4 --gateway 10.240.0.1 --name "private_subnet" $net_id 10.240.0.0/16 | grep ' id ' | awk '{print $4}')
     [[ -n "$subnet_id" ]] || { echo "subnet-create failed"; exit 1; }
     router_id=$(neutron router-create --tenant-id $project_id "private_router" | grep ' id ' | awk '{print $4}')
     [[ -n "$router_id" ]] || { echo "router-create failed"; exit 1; }
@@ -77,7 +77,7 @@ if [[ ! -f $TEST_CONFIG_DIR/$TEST_CONFIG ]]; then
   else
     # nova networking
     networking="nova-network"
-    nova network-create "default" --fixed-range-v4 10.240.0.0/24 --gateway 10.240.0.1
+    nova network-create "default" --fixed-range-v4 10.240.0.0/16 --gateway 10.240.0.1
   fi
 
   #create image in raw format
