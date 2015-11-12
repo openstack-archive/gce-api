@@ -14,19 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 from gceapi.tests.functional import test_base
 
 
-CREATE_NETWORK_TEMPLATE = {
-    "name": "${name}",
-    "IPv4Range": "${ip_range}",
-    "description": "testing network ${name}",
-    "gatewayIPv4": "${gateway}"
-}
-
-
-def _prepare_network_create_parameters(**kwargs):
-    return test_base.insert_json_parameters(CREATE_NETWORK_TEMPLATE, **kwargs)
+def ip_to_re_pattern(ip):
+    return ip.replace('.', '\.')
 
 
 class TestNetworksBase(test_base.GCETestCase):
@@ -40,11 +34,10 @@ class TestNetworksBase(test_base.GCETestCase):
 
     def _create_network(self, options):
         project_id = self.cfg.project_id
-        config = _prepare_network_create_parameters(**options)
-        self.trace('Crete network with options {}'.format(config))
+        self.trace('Crete network with options {}'.format(options))
         request = self.networks.insert(
             project=project_id,
-            body=config)
+            body=options)
         self._add_cleanup(self._delete_network, options['name'])
         self._execute_async_request(request, project_id)
 
@@ -59,10 +52,10 @@ class TestNetworksBase(test_base.GCETestCase):
         self._execute_async_request(request, project_id)
         self._remove_cleanup(self._delete_network, name)
 
-    def _list_networks(self):
+    def _list_networks(self, filter=None):
         project_id = self.cfg.project_id
         self.trace('List networks: project_id={}'.format(project_id))
-        request = self.networks.list(project=project_id)
+        request = self.networks.list(project=project_id, filter=filter)
         self.trace_request(request)
         result = request.execute()
         self.trace('Networks: {}'.format(result))
@@ -81,52 +74,113 @@ class TestNetworksBase(test_base.GCETestCase):
         self.api.validate_schema(value=result, schema_name='Network')
         return result
 
+    def _get_expected_network(self, options):
+        network = copy.deepcopy(options)
+        network.setdefault('kind', u'compute#network')
+        self_link = 'global/networks/{}'.format(network['name'])
+        network.setdefault('selfLink', self.api.get_project_url(self_link))
+        ip_range = network.get('IPv4Range', u'10.240.0.0/16')
+        network['IPv4Range'] = ip_to_re_pattern(ip_range)
+        gateway = network.get('gatewayIPv4', u'10.240.0.1')
+        network['gatewayIPv4'] = ip_to_re_pattern(gateway)
+        return network
 
-class TestReadDefaultNetwork(TestNetworksBase):
-    def setUp(self):
-        super(TestReadDefaultNetwork, self).setUp()
-        self._network_name = 'default'
+    def _ensure_network_created(self, options):
+        network = self._get_network(options['name'])
+        expected_network = self._get_expected_network(options)
+        self.assertObject(expected_network, network)
+        return network
 
-    def test_get(self):
-        self._get_network(self._network_name)
 
-    def test_list(self):
+class TestNetworks(TestNetworksBase):
+    @property
+    def _is_nova_network(self):
+        return self.cfg.networking == 'nova-network'
+
+    def test_get_default_network(self):
+        name = 'default'
+        network = self._get_network(name)
+        options = {
+            'name': name
+        }
+        expected = self._get_expected_network(options)
+        self.assertObject(expected, network)
+
+    def test_list_default_network(self):
+        name = 'default'
         result = self._list_networks()
-        self.assertFind(self._network_name, result)
+        result = self.assertFind(name, result)
+        options = {
+            'name': name
+        }
+        expected = self._get_expected_network(options)
+        self.assertObject(expected, result)
 
+    def test_list_default_network_by_filter(self):
+        name = 'default'
+        result = self._list_networks(filter='name eq {}'.format(name))
+        result = self.assertFind(name, result)
+        options = {
+            'name': name
+        }
+        expected = self._get_expected_network(options)
+        self.assertObject(expected, result)
 
-class TestNetworksCRUD(TestNetworksBase):
-    def setUp(self):
-        if self.cfg.networking == 'nova-network':
+    def test_create_network_default(self):
+        if self._is_nova_network:
             self.skipTest('Skip network because of nova-network')
             return
-        super(TestNetworksCRUD, self).setUp()
-        self._network_name = self._rand_name('network')
-
-    def _create(self):
+        name = self._rand_name('testnetwork')
         options = {
-            'name': self._network_name,
-            'ip_range': '10.240.0.0/16',
-            'gateway': '10.240.0.1'
+            'name': name,
         }
-        # TODO(alexey-mr): gateway is optional, so add case with absent one
         self._create_network(options)
+        self._ensure_network_created(options)
+        self._delete_network(name)
 
-    def _read(self):
-        result = self._get_network(self._network_name)
-        self.assertEqual(self._network_name, result['name'])
-        result = self._list_networks()
-        self.assertFind(self._network_name, result)
+    def test_create_network_with_ip_range(self):
+        if self._is_nova_network:
+            self.skipTest('Skip network because of nova-network')
+            return
+        name = self._rand_name('testnetwork')
+        options = {
+            'name': name,
+            'IPv4Range': '10.241.0.0/16',
+        }
+        self._create_network(options)
+        options['gatewayIPv4'] = '10.241.0.1'
+        self._ensure_network_created(options)
+        self._delete_network(name)
 
-    def _update(self):
-        # TODO(alexey-mr): to be implemented
-        pass
+    def test_create_network_with_gateway(self):
+        if self._is_nova_network:
+            self.skipTest('Skip network because of nova-network')
+            return
+        name = self._rand_name('testnetwork')
+        options = {
+            'name': name,
+            'IPv4Range': '10.242.0.0/16',
+            'gatewayIPv4': '10.242.0.1'
+        }
+        self._create_network(options)
+        self._ensure_network_created(options)
+        self._delete_network(name)
 
-    def _delete(self):
-        self._delete_network(self._network_name)
-
-    def test_crud(self):
-        self._create()
-        self._read()
-        self._update()
-        self._delete()
+    def test_list_networks_by_filter_name(self):
+        if self._is_nova_network:
+            self.skipTest('Skip network because of nova-network')
+            return
+        names = [self._rand_name('testnetwork') for _ in range(0, 3)]
+        networks = dict()
+        for name in names:
+            options = {
+                'name': name,
+            }
+            self._create_network(options)
+            networks[name] = self._ensure_network_created(options)
+        for name in names:
+            result = self._list_networks(filter='name eq {}'.format(name))
+            network = self.assertFind(name, result)
+            self.assertObject(networks[name], network)
+        for name in names:
+            self._delete_network(name)
