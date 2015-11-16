@@ -33,7 +33,7 @@ class Controller(gce_common.Controller):
                 "source": image.get("image_ref", ""),
             },
             "status": image["status"],
-            "archiveSizeBytes": image["size"],
+            "archiveSizeBytes": str(image["size"]),
             "description": image.get("description", ""),
             # NOTE(apavlov): Size of the image when restored onto a disk.
             #"diskSizeGb": 0

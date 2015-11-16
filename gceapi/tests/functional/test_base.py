@@ -142,24 +142,28 @@ class GCEApi(object):
         return '{}/projects/{}'.format(self._api_url, CONF.project_id)
 
     def get_zone_url(self, resource=None, zone=None):
+        if resource and self._is_absolute_url(resource):
+            return resource
         z = zone
         if z is None:
             z = CONF.zone
         if not self._is_absolute_url(z):
             t = '{}/{}' if z.startswith('zones/') else '{}/zones/{}'
             z = t.format(self.project_url, z)
-        if resource is None:
+        if not resource:
             return z
         return '{}/{}'.format(z, resource)
 
     def get_region_url(self, resource=None, region=None):
+        if resource and self._is_absolute_url(resource):
+            return resource
         r = region
         if r is None:
             r = CONF.region
         if not self._is_absolute_url(r):
             t = '{}/{}' if r.startswith('regions/') else '{}/regions/{}'
             r = t.format(self.project_url, r)
-        if resource is None:
+        if not resource:
             return r
         return '{}/{}'.format(r, resource)
 
