@@ -11,7 +11,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from keystoneclient import client as kc
+from keystoneclient.auth import identity as keystone_identity
+from keystoneclient import client as keystone_client
+from keystoneclient import session as keystone_session
+
 from novaclient import client as novaclient
 from novaclient import exceptions as nova_exception
 from oslo_config import cfg
@@ -50,10 +53,30 @@ REQUIRED_NOVA_API_MICROVERSION = '2.3'
 _nova_api_version = None
 
 
-def nova(context, service_type='compute'):
+def service_session():
+    auth = keystone_identity.Password(
+        auth_url=CONF.keystone_url,
+        username=CONF.keystone_authtoken['admin_user'],
+        password=CONF.keystone_authtoken['admin_password'],
+        project_name=CONF.keystone_authtoken['admin_tenant_name'])
+    session = keystone_session.Session(auth=auth)
+    return session
+
+
+def create_session_for_context(context):
+    auth = keystone_identity.Token(
+        auth_url=CONF.keystone_url,
+        token=context.auth_token,
+        project_id=context.project_id
+    )
+    session = keystone_session.Session(auth=auth)
+    return session
+
+
+def nova(context, service_type='compute', session=None):
+    s = session if session else create_session_for_context(context)
     args = {
-        'auth_url': CONF.keystone_url,
-        'auth_token': context.auth_token,
+        'session': s,
         'bypass_url': url_for(context, service_type),
     }
     global _nova_api_version
@@ -62,66 +85,63 @@ def nova(context, service_type='compute'):
     return novaclient.Client(_nova_api_version, **args)
 
 
-def neutron(context):
+def neutron(context, session=None):
     if neutronclient is None:
         return None
-
+    s = session if session else create_session_for_context(context)
     args = {
-        'auth_url': CONF.keystone_url,
+        'session': s,
         'service_type': 'network',
-        'token': context.auth_token,
         'endpoint_url': url_for(context, 'network'),
     }
-
     return neutronclient.Client(**args)
 
 
-def glance(context):
+def glance(context, session=None):
     if glanceclient is None:
         return None
-
+    s = session if session else create_session_for_context(context)
     args = {
-        'auth_url': CONF.keystone_url,
+        'session': s,
         'service_type': 'image',
-        'token': context.auth_token,
+        'endpoint': url_for(context, 'image')
     }
-
-    return glanceclient.Client(
-        "1", endpoint=url_for(context, 'image'), **args)
+    return glanceclient.Client("1", **args)
 
 
-def cinder(context):
+def cinder(context, session=None):
     if cinderclient is None:
-        return nova(context, 'volume')
-
+        return nova(context, 'volume', session=session)
+    s = session if session else create_session_for_context(context)
     args = {
+        'session': s,
         'service_type': 'volume',
-        'auth_url': CONF.keystone_url,
         'username': None,
         'api_key': None,
     }
-
     _cinder = cinderclient.Client('1', **args)
     management_url = url_for(context, 'volume')
     _cinder.client.auth_token = context.auth_token
     _cinder.client.management_url = management_url
-
     return _cinder
 
 
+def service_keystone(session=None):
+    s = session if session else service_session()
+    client = keystone_client.Client(
+        session=s,
+        auth_url=CONF.keystone_url
+    )
+    return client
+
+
 def keystone(context):
-    c = kc.Client(
-        token=context.auth_token,
-        project_id=context.project_id,
-        tenant_id=context.project_id,
-        auth_url=CONF.keystone_url)
-    if c.auth_ref is None:
-        # Ver2 doesn't create session and performs
-        # authentication automatically, but Ver3 does create session
-        # if it's not provided and doesn't perform authentication.
-        # TODO(alexey-mr): use sessions
-        c.authenticate()
-    return c
+    session = create_session_for_context(context)
+    client = keystone_client.Client(
+        session=session,
+        auth_url=CONF.keystone_url
+    )
+    return client
 
 
 def url_for(context, service_type):
@@ -144,7 +164,6 @@ def get_url_from_catalog(service_catalog, service_type):
                 return endpoint['url']
         else:
             return None
-
     return None
 
 

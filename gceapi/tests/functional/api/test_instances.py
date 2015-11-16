@@ -33,7 +33,7 @@ class TestInstancesBase(test_disks.TestDiskBase):
         cfg = self.cfg
         project_id = cfg.project_id
         zone = cfg.zone
-        self.trace('Crete instance with options {}'.format(options))
+        self.trace('Create instance with options {}'.format(options))
         request = self.instances.insert(
             project=project_id,
             zone=zone,
@@ -94,7 +94,10 @@ class TestInstancesBase(test_disks.TestDiskBase):
         #     disk.setdefault('deviceName', 'persistent-disk-[0-9]+')
         is_boot = disk['boot'] = disk.get('boot', False)
         disk.setdefault('index', 0 if is_boot else '[0-9]+')
-        disk.setdefault('autoDelete', False)
+        # in case if autoDelete was set to 'False' during creation
+        # gce does not return the field at all, so remove filed from check
+        if not disk.get('autoDelete', False):
+            disk.pop('autoDelete', None)
         # TODO(alexey-mr): OS gce api doesn't return interface
         # disk.setdefault('interface', u'SCSI')
         # remove input only parameters
@@ -160,7 +163,7 @@ class TestInstancesBase(test_disks.TestDiskBase):
         self.assertObject(expected_instance, instance)
         return instance
 
-    def _get_create_instance_default_options(self, name):
+    def _get_create_instance_from_image_options(self, name):
         cfg = self.cfg
         machine_type = 'zones/{}/machineTypes/{}'.format(cfg.zone,
                                                          cfg.machine_type)
@@ -185,18 +188,34 @@ class TestInstancesBase(test_disks.TestDiskBase):
         }
         return options
 
+    def _get_create_instance_from_disks_options(self, name, disks):
+        cfg = self.cfg
+        machine_type = 'zones/{}/machineTypes/{}'.format(cfg.zone,
+                                                         cfg.machine_type)
+        options = {
+            'name': name,
+            'machineType': machine_type,
+            'disks': disks,
+            'networkInterfaces': [
+                {
+                    'network': 'global/networks/default',
+                }
+            ],
+        }
+        return options
+
 
 class TestInstances(TestInstancesBase):
-    def test_create_delete_instance_default(self):
+    def test_create_delete_instance_from_image(self):
         name = self._rand_name('testinstance')
-        options = self._get_create_instance_default_options(name)
+        options = self._get_create_instance_from_image_options(name)
         self._create_instance(options)
         self._ensure_instance_created(options)
         self._delete_instance(name)
 
     def test_list_instances(self):
         name = self._rand_name('testinstance')
-        options = self._get_create_instance_default_options(name)
+        options = self._get_create_instance_from_image_options(name)
         self._create_instance(options)
         instance = self._ensure_instance_created(options)
         result = self._list_instances()
@@ -209,7 +228,7 @@ class TestInstances(TestInstancesBase):
         # prepare resources
         instances = dict()
         for name in names:
-            options = self._get_create_instance_default_options(name)
+            options = self._get_create_instance_from_image_options(name)
             self._create_instance(options)
             instances[name] = self._ensure_instance_created(options)
         # do list by filter test
@@ -220,3 +239,46 @@ class TestInstances(TestInstancesBase):
         # delete resources
         for name in names:
             self._delete_instance(name)
+
+    def _create_boot_disk(self):
+        image_name, image_project = self._parse_image_url(self.cfg.image)
+        image = self._get_image(image_name, image_project)
+        boot_disk = self._create_disk_from_image(image)
+        opts = {
+            'autoDelete': False,
+            'boot': True,
+            'source': boot_disk['selfLink']
+        }
+        return boot_disk, opts
+
+    def _create_data_disk(self):
+        name = self._rand_name('testdisk')
+        options = {
+            'name': name
+        }
+        self._create_disk(options)
+        data_disk = self._ensure_disk_created(options)
+        opts = {
+            'autoDelete': False,
+            'boot': False,
+            'source': data_disk['selfLink']
+        }
+        return data_disk, opts
+
+    def test_create_instance_from_disks(self):
+        # TODO(alexey-mr): OS GCE does not support image creation from disk'
+        if not self.is_real_gce:
+            self.skipTest('OS GCE does not support image creation from disk')
+            return
+        name = self._rand_name('testinstance')
+        boot_disk, boot_disk_opts = self._create_boot_disk()
+        data_disk, data_disk_opts = self._create_data_disk()
+        options = self._get_create_instance_from_disks_options(
+            name,
+            [boot_disk_opts, data_disk_opts]
+        )
+        self._create_instance(options)
+        self._ensure_instance_created(options)
+        self._delete_instance(name)
+        self._delete_disk(boot_disk['name'])
+        self._delete_disk(data_disk['name'])

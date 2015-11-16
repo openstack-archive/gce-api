@@ -17,7 +17,8 @@ import uuid
 
 from cinderclient import client as cinderclient
 from glanceclient import client as glanceclient
-from keystoneclient import client as kc
+from keystoneclient.auth import identity as keystone_identity
+from keystoneclient import client as keystone_client
 from neutronclient.v2_0 import client as neutronclient
 from novaclient import client as novaclient
 from oslo_utils import timeutils
@@ -94,7 +95,12 @@ class GCEControllerTest(test.TestCase):
         super(GCEControllerTest, self).setUp()
         self.maxDiff = None
 
-        self.stubs.Set(kc, 'Client', fake_keystone_client.FakeKeystoneClient)
+        self.stubs.Set(keystone_client,
+                       'Client',
+                       fake_keystone_client.FakeKeystoneClient)
+        self.stubs.Set(keystone_identity,
+                       'Password',
+                       fake_keystone_client.FakePassword)
         self.stubs.Set(neutronclient, "Client",
            fake_neutron_client.FakeNeutronClient)
         self.stubs.Set(glanceclient, "Client",

@@ -20,7 +20,7 @@ from gceapi.tests.functional import test_base
 
 
 def ip_to_re_pattern(ip):
-    return ip.replace('.', '\.')
+    return test_base.string_to_re_pattern(ip)
 
 
 class TestNetworksBase(test_base.GCETestCase):

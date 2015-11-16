@@ -24,9 +24,12 @@ FAKE_PROJECTS = [utils.FakeObject({
 })]
 
 
-class FakeTenants(object):
+class FakeProjects(object):
     def list(self):
         return FAKE_PROJECTS
+
+    def get(self, project_id):
+        return FAKE_PROJECTS[0]
 
 
 class FakeAccessInfo(object):
@@ -38,9 +41,14 @@ class FakeKeystoneClient(object):
         pass
 
     @property
-    def tenants(self):
-        return FakeTenants()
+    def projects(self):
+        return FakeProjects()
 
     @property
     def auth_ref(self):
         return FakeAccessInfo()
+
+
+class FakePassword(object):
+    def __init__(self, **kwargs):
+        pass

@@ -44,7 +44,7 @@ class Controller(gce_common.Controller):
             "quotas": []
         }
 
-        self._add_quota(result_dict["quotas"], "CPU",
+        self._add_quota(result_dict["quotas"], "CPUS",
             project["nova_limits"].get("maxTotalCores", -1),
             project["nova_limits"].get("totalCoresUsed", -1))
         self._add_quota(result_dict["quotas"], "INSTANCES",
@@ -58,8 +58,9 @@ class Controller(gce_common.Controller):
         self._add_quota(result_dict["quotas"], "SNAPSHOTS",
             quota.get("limit", -1), quota.get("in_use", -1))
         quota = project["cinder_quotas"].get("volumes", {})
-        self._add_quota(result_dict["quotas"], "DISKS",
-            quota.get("limit", -1), quota.get("in_use", -1))
+        # Note(alexey-mr): GCE has no limit by number of disks
+        # self._add_quota(result_dict["quotas"], "DISKS",
+        #     quota.get("limit", -1), quota.get("in_use", -1))
 
         self._add_quota(result_dict["quotas"], "FIREWALLS",
             project["neutron_quota"].get("security_group", -1),

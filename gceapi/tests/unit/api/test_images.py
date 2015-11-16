@@ -30,7 +30,7 @@ EXPECTED_IMAGE_1 = {
         "source": "http://fake_url/fake_resource",
     },
     "status": "READY",
-    "archiveSizeBytes": 1
+    "archiveSizeBytes": "1"
 }
 EXPECTED_IMAGE_2 = {
     "kind": "compute#image",
@@ -46,7 +46,7 @@ EXPECTED_IMAGE_2 = {
         "source": "",
     },
     "status": "READY",
-    "archiveSizeBytes": 2
+    "archiveSizeBytes": "2"
 }
 NEW_IMAGE = {
     "kind": "compute#image",
@@ -62,7 +62,7 @@ NEW_IMAGE = {
         "source": "http://example.com/image.tar",
     },
     "status": "READY",
-    "archiveSizeBytes": 5,
+    "archiveSizeBytes": "5",
 }
 
 
