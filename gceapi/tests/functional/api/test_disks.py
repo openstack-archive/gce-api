@@ -62,13 +62,11 @@ class TestSnapshotsBase(test_base.GCETestCase):
     def _get_expected_snapshot(self, disk_name, options):
         snapshot = copy.deepcopy(options)
         # fill defaults if needed
-        if 'kind' not in snapshot:
-            snapshot['kind'] = 'compute#snapshot'
-        if 'selfLink' not in snapshot:
+        snapshot.setdefault('kind', 'compute#snapshot')
+        if 'selfLink' not in options:
             snapshot_url = 'global/snapshots/{}'.format(snapshot['name'])
             snapshot['selfLink'] = self.api.get_project_url(snapshot_url)
-        if 'status' not in snapshot:
-            snapshot['status'] = 'READY'
+        snapshot.setdefault('status', 'READY')
         if 'sourceDisk' not in options:
             src_disk_url = 'disks/{}'.format(disk_name)
             snapshot['sourceDisk'] = self.api.get_zone_url(src_disk_url)
@@ -83,7 +81,92 @@ class TestSnapshotsBase(test_base.GCETestCase):
         return result
 
 
-class TestDiskBase(TestSnapshotsBase):
+class TestImagesBase(TestSnapshotsBase):
+    @property
+    def images(self):
+        res = self.api.compute.images()
+        self.assertIsNotNone(
+            res,
+            'Null images object, api is not built properly')
+        return res
+
+    def _create_image(self, options):
+        name = options['name']
+        cfg = self.cfg
+        project_id = cfg.project_id
+        self.trace('Create image {}'.format(options))
+        request = self.images.insert(
+            project=project_id,
+            body=options)
+        self._add_cleanup(self._delete_image, name)
+        self._execute_async_request(request, project_id)
+
+    def _delete_image(self, name):
+        project_id = self.cfg.project_id
+        self.trace('Delete image: project_id={} name={}'.
+                   format(project_id, name))
+        request = self.images.delete(
+            project=project_id,
+            image=name)
+        self._execute_async_request(request, project_id)
+        self._remove_cleanup(self._delete_image, name)
+
+    def _get_image(self, name, project=None):
+        project_id = project if project else self.cfg.project_id
+        self.trace('Get image: project_id={} name={}'.
+                   format(project_id, name))
+        request = self.images.get(
+            project=project_id,
+            image=name)
+        result = request.execute()
+        self.trace('Image: {}'.format(result))
+        self.api.validate_schema(value=result, schema_name='Image')
+        return result
+
+    @staticmethod
+    def _parse_image_url(image_url):
+        parsed_url = image_url.split('/')
+        name = parsed_url[-1]
+        project = parsed_url[-4]
+        return name, project
+
+    def _get_image_size(self, image_url):
+        name, project = self._parse_image_url(image_url)
+        image = self._get_image(name, project)
+        return image['diskSizeGb']
+
+    def _get_expected_image(self, options):
+        image = copy.deepcopy(options)
+        image.setdefault('kind', 'compute#image')
+        if 'selfLink' not in image:
+            relative_url = 'global/images/{}'.format(image['name'])
+            image['selfLink'] = self.api.get_project_url(relative_url)
+        image.setdefault('sourceType', 'RAW')
+        image.setdefault('status', 'READY')
+        return image
+
+    def _ensure_image_created(self, options):
+        name = options['name']
+        image = self._get_expected_image(options)
+        # get object from server and check properties
+        result = self._get_image(name)
+        self.assertObject(image, result)
+        return result
+
+    def _create_image_from_disk(self, disk):
+        name = self._rand_name('testimage')
+        options = {
+            'name': name,
+            'sourceDisk': disk['selfLink']
+        }
+        self._create_image(options)
+        options['sourceDisk'] = disk['selfLink']
+        options['sourceDiskId'] = disk['id']
+        options['diskSizeGb'] = disk['sizeGb']
+        return self._ensure_image_created(options)
+
+
+class TestDiskBase(TestImagesBase):
     @property
     def disks(self):
         res = self.api.compute.disks()
@@ -152,20 +235,16 @@ class TestDiskBase(TestSnapshotsBase):
     def _get_expected_disk(self, options, source_image=None):
         disk = copy.deepcopy(options)
         # fill defaults if needed
-        if 'kind' not in disk:
-            disk['kind'] = 'compute#disk'
-        if 'sizeGb' not in disk:
-            disk['sizeGb'] = '500' if self.is_real_gce else '1'
-        if 'zone' not in disk:
-            disk['zone'] = self.api.get_zone_url()
+        disk.setdefault('kind', 'compute#disk')
+        disk.setdefault('sizeGb', '500' if self.is_real_gce else '1')
+        disk.setdefault('zone', self.api.get_zone_url())
         if 'selfLink' not in disk:
             disk_url = 'disks/{}'.format(options['name'])
             disk['selfLink'] = self.api.get_zone_url(disk_url)
         # TODO(alexey-mr): un-comment when disk-types be supported
         # if 'type' not in disk:
         #     disk['type'] = self.api.get_zone_url('diskTypes/pd-standard')
-        if 'status' not in disk:
-            disk['status'] = 'READY'
+        disk.setdefault('status', 'READY')
         if 'sourceSnapshot' in options:
             snapshot_url = self.api.get_project_url(options['sourceSnapshot'])
             disk['sourceSnapshot'] = snapshot_url
@@ -180,6 +259,17 @@ class TestDiskBase(TestSnapshotsBase):
         result = self._get_disk(name)
         self.assertObject(disk, result)
         return result
+
+    def _create_disk_from_image(self, image):
+        name = self._rand_name('testdisk')
+        options = {
+            'name': name,
+        }
+        self._create_disk(options, source_image=image['selfLink'])
+        options['sourceImage'] = image['selfLink']
+        options['sourceImageId'] = image['id']
+        options['sizeGb'] = image['diskSizeGb']
+        return self._ensure_disk_created(options)
 
     def _create_snapshot(self, disk_name, options):
         name = options['name']
@@ -245,8 +335,7 @@ class TestDisks(TestDiskBase):
             'name': name,
         }
         self._create_disk(options, source_image=image)
-        # TODO(alexey-mr): read size of image and add it for checking
-        # options['sizeGb'] = self._get_image_size(self.cfg.image)
+        options['sizeGb'] = self._get_image_size(self.cfg.image)
         self._ensure_disk_created(options, source_image=image)
         self._delete_disk(name)
 
