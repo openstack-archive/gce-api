@@ -32,21 +32,19 @@ class API(base_api.API):
         return self.KIND
 
     def get_item(self, context, name, scope=None):
-        project_name = context.project_name
-
-        keystone = clients.keystone(context)
-        project = [t for t in keystone.tenants.list()
-                if t.name == project_name][0]
-
+        session = clients.service_session()
+        keystone = clients.service_keystone(session=session)
+        project = keystone.projects.get(context.project_id)
         result = utils.to_dict(project)
         result["keypair"] = self._get_gce_keypair(context)
         project_id = project.id
 
-        nova_limits = clients.nova(context).limits.get(tenant_id=project_id)
+        nova = clients.nova(context, session=session)
+        nova_limits = nova.limits.get(tenant_id=project_id)
         result["nova_limits"] = dict((l.name, l.value)
                                      for l in nova_limits.absolute)
 
-        cinder_client = clients.cinder(context)
+        cinder_client = clients.cinder(context, session=session)
         try:
             result["cinder_quotas"] = utils.to_dict(
                 cinder_client.quotas.get(project_id, usage=True))
@@ -59,7 +57,7 @@ class API(base_api.API):
         net_api = CONF.get("network_api")
         if net_api is None or ("quantum" in net_api
                                or "neutron" in net_api):
-            neutron_client = clients.neutron(context)
+            neutron_client = clients.neutron(context, session=session)
             result["neutron_quota"] = (
                 neutron_client.show_quota(project_id)["quota"])
             result["neutron_quota"]["network_used"] = len(neutron_client

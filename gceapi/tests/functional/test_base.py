@@ -54,6 +54,14 @@ def safe_call(method):
     return wrapper
 
 
+def string_to_re_pattern(s):
+    _SYMBOLS = '.+'
+    res = s
+    for i in _SYMBOLS:
+        res = res.replace(i, '\{}'.format(i))
+    return res
+
+
 class LocalRefResolver(jsonschema.RefResolver):
     def __init__(
             self,
@@ -142,24 +150,28 @@ class GCEApi(object):
         return '{}/projects/{}'.format(self._api_url, CONF.project_id)
 
     def get_zone_url(self, resource=None, zone=None):
+        if resource and self._is_absolute_url(resource):
+            return resource
         z = zone
         if z is None:
             z = CONF.zone
         if not self._is_absolute_url(z):
             t = '{}/{}' if z.startswith('zones/') else '{}/zones/{}'
             z = t.format(self.project_url, z)
-        if resource is None:
+        if not resource:
             return z
         return '{}/{}'.format(z, resource)
 
     def get_region_url(self, resource=None, region=None):
+        if resource and self._is_absolute_url(resource):
+            return resource
         r = region
         if r is None:
             r = CONF.region
         if not self._is_absolute_url(r):
             t = '{}/{}' if r.startswith('regions/') else '{}/regions/{}'
             r = t.format(self.project_url, r)
-        if resource is None:
+        if not resource:
             return r
         return '{}/{}'.format(r, resource)
 
@@ -211,6 +223,20 @@ class GCETestCase(base.BaseTestCase):
                     return i
         self.fail(
             'There is no required item {} in the list {}'.format(item, items))
+
+    def assertNotFind(self, item, items_list, key='items'):
+        found = None
+        items = []
+        if key in items_list:
+            items = items_list[key]
+            for i in items:
+                if i['name'] == item:
+                    found = i
+                    break
+
+        if found:
+            msg = 'There is item {} that should not be in the list {}'
+            self.fail(msg.format(item, items))
 
     def _match_values(self, key, expected, actual):
         missing = []

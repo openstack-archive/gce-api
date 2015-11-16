@@ -12,8 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from oslo_config import cfg
+
 from gceapi.api import projects
 from gceapi.tests.unit.api import common
+
+
+CONF = cfg.CONF
 
 
 EXPECTED_PROJECT = {
@@ -26,7 +31,7 @@ EXPECTED_PROJECT = {
         "kind": "compute#metadata"
     },
     "quotas": [{
-        "metric": "CPU",
+        "metric": "CPUS",
         "limit": 17.0,
         "usage": 1.0
     },
@@ -45,11 +50,12 @@ EXPECTED_PROJECT = {
         "metric": "SNAPSHOTS",
         "limit": 10.0
     },
-    {
-        "usage": 1.0,
-        "metric": "DISKS",
-        "limit": 10.0
-    },
+    # There is no such limit in GCE
+    # {
+    #     "usage": 1.0,
+    #     "metric": "DISKS",
+    #     "limit": 10.0
+    # },
     {
         "usage": 2.0,
         "metric": "FIREWALLS",
@@ -68,8 +74,28 @@ EXPECTED_PROJECT = {
 ]}
 
 
+OPTIONS_GROUP = cfg.OptGroup(name='keystone_authtoken',
+                             title='keystone_authtoken')
+OPTIONS = [
+    cfg.StrOpt('admin_user',
+               default='admin',
+               help='Admin user'),
+    cfg.StrOpt('admin_password',
+               default='password',
+               help='Admin user password'),
+    cfg.StrOpt('admin_tenant_name',
+               default='service',
+               help='Admin tenant'),
+]
+
+
 class ProjectsTest(common.GCEControllerTest):
     def setUp(self):
+        CONF.register_group(OPTIONS_GROUP)
+        CONF.register_opts(OPTIONS, group=OPTIONS_GROUP)
+        CONF.set_override('admin_user', '', group='keystone_authtoken')
+        CONF.set_override('admin_password', '', group='keystone_authtoken')
+        CONF.set_override('admin_tenant_name', '', group='keystone_authtoken')
         super(ProjectsTest, self).setUp()
         self.controller = projects.Controller()
 
