@@ -20,14 +20,14 @@ FAKE_LOCAL_ROUTE_1 = {
     u'description': u'Default route to the virtual network.',
     u'name': u'default-route-734b9c83-3a8b-4350-8fbf-d40f571ee163-local',
     u'nextHopNetwork': (u'http://localhost/compute/v1beta15/projects/'
-                        'fake_project/networks/private'),
+                        'fake_project/global/networks/private'),
     u'destRange': u'10.0.0.0/24',
     u'id': u'6109690470355354668',
     u'selfLink': (u'http://localhost/compute/v1beta15/projects/'
                   'fake_project/global/routes/'
                   'default-route-734b9c83-3a8b-4350-8fbf-d40f571ee163-local'),
     u'network': (u'http://localhost/compute/v1beta15/projects/'
-                 'fake_project/networks/private'),
+                 'fake_project/global/networks/private'),
     u'creationTimestamp': u'',
 }
 FAKE_INTERNET_ROUTE_1 = {
@@ -45,7 +45,7 @@ FAKE_INTERNET_ROUTE_1 = {
         'fake_project/global/routes/'
         'default-route-734b9c83-3a8b-4350-8fbf-d40f571ee163-internet'),
     u'network': (u'http://localhost/compute/v1beta15/projects/'
-                 'fake_project/networks/private'),
+                 'fake_project/global/networks/private'),
     u'creationTimestamp': u'',
 }
 FAKE_CUSTOM_ROUTE_1 = {
@@ -59,7 +59,7 @@ FAKE_CUSTOM_ROUTE_1 = {
     u'selfLink': (u'http://localhost/compute/v1beta15/projects/'
                   'fake_project/global/routes/custom-route-1'),
     u'network': (u'http://localhost/compute/v1beta15/projects/'
-                 'fake_project/networks/private'),
+                 'fake_project/global/networks/private'),
     u'creationTimestamp': u'2013-12-25T09:05:07.396957Z',
 }
 FAKE_CUSTOM_ROUTE_2 = {
@@ -75,7 +75,7 @@ FAKE_CUSTOM_ROUTE_2 = {
         'fake_project/global/routes/custom-route-'
         '734b9c83-3a8b-4350-8fbf-d40f571ee163-dst-89-34-0-0-16-gw-10-0-0-78'),
     u'network': (u'http://localhost/compute/v1beta15/projects/'
-                 'fake_project/networks/private'),
+                 'fake_project/global/networks/private'),
     u'creationTimestamp': u'',
 }
 FAKE_LOCAL_ROUTE_2 = {
@@ -84,14 +84,14 @@ FAKE_LOCAL_ROUTE_2 = {
     u'description': u'Default route to the virtual network.',
     u'name': u'default-route-7aa33661-33ba-4291-a2c7-44bfd59884c1-local',
     u'nextHopNetwork': (u'http://localhost/compute/v1beta15/projects/'
-                        'fake_project/networks/public'),
+                        'fake_project/global/networks/public'),
     u'destRange': u'172.24.4.224/28',
     u'id': u'2822661357924528032',
     u'selfLink': (u'http://localhost/compute/v1beta15/projects/'
                   'fake_project/global/routes/'
                   'default-route-7aa33661-33ba-4291-a2c7-44bfd59884c1-local'),
     u'network': (u'http://localhost/compute/v1beta15/projects/'
-                 'fake_project/networks/public'),
+                 'fake_project/global/networks/public'),
     u'creationTimestamp': u'',
 }
 

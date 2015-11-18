@@ -121,9 +121,10 @@ class API(base_api.API):
         router = client.add_gateway_router(
                 router["id"],
                 external_gateway_info)["router"]
-        gateway_port = client.list_ports(
-                device_id=router["id"],
-                device_owner="network:router_gateway")["ports"][0]
+        # TODO(alexey-mr): ?admin needed - router_gateway ports haven't tenant
+        ports = client.list_ports(device_id=router["id"],
+                                  device_owner="network:router_gateway")
+        gateway_port = ports["ports"][0]
         route = self._add_gce_route(context, network, port, body,
                                    is_default=False,
                                    destination=gateway_port["id"],

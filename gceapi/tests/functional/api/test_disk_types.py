@@ -35,7 +35,7 @@ class TestDiskTypes(test_base.GCETestCase):
         return res
 
     def setUp(self):
-        if not self.is_real_gce:
+        if not self.full_compatibility:
             self.skipTest('Not supported in Openstack GCE API')
             return
         super(TestDiskTypes, self).setUp()

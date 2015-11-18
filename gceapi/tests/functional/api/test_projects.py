@@ -91,7 +91,7 @@ class TestProjects(test_instances.TestInstancesBase):
         self.assertObject(expected_project, project)
 
     def test_set_common_metadata(self):
-        if not self.is_real_gce:
+        if not self.full_compatibility:
             # TODO(alexey-mr): OS GCE supports only sshKeys
             self.skipTest('OS GCE API does not support common metadata '
                           'except of sshKeys')

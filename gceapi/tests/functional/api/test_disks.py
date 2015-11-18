@@ -237,7 +237,7 @@ class TestDiskBase(TestImagesBase):
         disk = copy.deepcopy(options)
         # fill defaults if needed
         disk.setdefault('kind', 'compute#disk')
-        disk.setdefault('sizeGb', '500' if self.is_real_gce else '1')
+        disk.setdefault('sizeGb', '500' if self.full_compatibility else '1')
         disk.setdefault('zone', self.api.get_zone_url())
         if 'selfLink' not in disk:
             disk_url = 'disks/{}'.format(options['name'])

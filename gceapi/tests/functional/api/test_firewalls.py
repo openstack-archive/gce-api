@@ -19,10 +19,6 @@ import copy
 from gceapi.tests.functional.api import test_networks
 
 
-def ip_to_re_pattern(ip):
-    return test_networks.ip_to_re_pattern(ip)
-
-
 class TestFirewallBase(test_networks.TestNetworksBase):
     @property
     def firewalls(self):
@@ -125,7 +121,7 @@ class TestFirewalls(TestFirewallBase):
         self._delete_firewall(name)
 
     def test_create_delete_firewall_source_tag_tcp_port_range(self):
-        if not self.is_real_gce:
+        if not self.full_compatibility:
             self.skipTest('Skip because of OS GCE does not support tags')
             return
         name = self._rand_name('testfirewall')
@@ -143,7 +139,7 @@ class TestFirewalls(TestFirewallBase):
         self._delete_firewall(name)
 
     def test_create_delete_firewall_target_tag_tcp_empty_ports(self):
-        if not self.is_real_gce:
+        if not self.full_compatibility:
             self.skipTest('Skip because of OS GCE does not support tags')
             return
         name = self._rand_name('testfirewall')

@@ -298,7 +298,7 @@ class GCETestCase(base.BaseTestCase):
             self.fail(err)
 
     @property
-    def is_real_gce(self):
+    def full_compatibility(self):
         return self._credentials_provider.is_google_auth
 
     @property

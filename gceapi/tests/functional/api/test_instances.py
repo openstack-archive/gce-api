@@ -145,8 +145,8 @@ class TestInstancesBase(test_disks.TestDiskBase):
         self_link = 'instances/{}'.format(name)
         instance.setdefault('selfLink', self.api.get_zone_url(self_link))
         instance.setdefault('zone', self.api.get_zone_url())
-        # TODO(alexey-mr): OS gce api doesn't return canIpForward
-        # instance.setdefault('canIpForward', False)
+        # TODO(alexey-mr): OS gce doesn't return canIpForward => don't check
+        instance.pop('canIpForward', None)
         # TODO(alexey-mr): OS gce api doesn't return scheduling
         # instance.setdefault(
         #     'scheduling',
@@ -267,7 +267,7 @@ class TestInstances(TestInstancesBase):
 
     def test_create_instance_from_disks(self):
         # TODO(alexey-mr): OS GCE does not support image creation from disk'
-        if not self.is_real_gce:
+        if not self.full_compatibility:
             self.skipTest('OS GCE does not support image creation from disk')
             return
         name = self._rand_name('testinstance')

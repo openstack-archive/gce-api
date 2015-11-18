@@ -25,7 +25,7 @@ class Controller(gce_common.Controller):
 
     def format_item(self, request, route, scope):
         network_name = self._qualify(
-                request, "networks", route["network"]["name"], None)
+                request, "global/networks", route["network"]["name"], None)
         result_dict = {
             "name": route["name"],
             "network": network_name,

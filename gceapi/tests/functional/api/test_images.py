@@ -78,7 +78,7 @@ class TestImages(test_disks.TestDiskBase):
 
     def test_create_delete_image_from_disk(self):
         # TODO(alexey-mr): OS GCE does not support image creation from disk'
-        if not self.is_real_gce:
+        if not self.full_compatibility:
             self.skipTest('OS GCE does not support image creation from disk')
             return
         # prepare disk for further image creation
@@ -104,7 +104,7 @@ class TestImages(test_disks.TestDiskBase):
 
     def test_list_images(self):
         # TODO(alexey-mr): OS GCE does not support image creation from disk'
-        if not self.is_real_gce:
+        if not self.full_compatibility:
             self.skipTest('OS GCE does not support image creation from disk')
             return
         # prepare resources
@@ -121,7 +121,7 @@ class TestImages(test_disks.TestDiskBase):
 
     def test_list_images_by_filter_name(self):
         # TODO(alexey-mr): OS GCE does not support image creation from disk'
-        if not self.is_real_gce:
+        if not self.full_compatibility:
             self.skipTest('OS GCE does not support image creation from disk')
             return
         # prepare resources
