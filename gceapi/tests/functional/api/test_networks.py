@@ -19,6 +19,13 @@ import copy
 from gceapi.tests.functional import test_base
 
 
+NETWORK_URL_TEMPLATE = 'global/networks/{}'
+DEFAULT_NETWORK_NAME = 'default'
+DEFAULT_NETWORK_URL = NETWORK_URL_TEMPLATE.format(DEFAULT_NETWORK_NAME)
+DEFAULT_NETWORK_IP_RANGE = u'10.240.0.0/16'
+DEFAULT_NETWORK_GATEWAY = u'10.240.0.1'
+
+
 def ip_to_re_pattern(ip):
     return test_base.string_to_re_pattern(ip)
 
@@ -77,11 +84,11 @@ class TestNetworksBase(test_base.GCETestCase):
     def _get_expected_network(self, options):
         network = copy.deepcopy(options)
         network.setdefault('kind', u'compute#network')
-        self_link = 'global/networks/{}'.format(network['name'])
+        self_link = NETWORK_URL_TEMPLATE.format(network['name'])
         network.setdefault('selfLink', self.api.get_project_url(self_link))
-        ip_range = network.get('IPv4Range', u'10.240.0.0/16')
+        ip_range = network.get('IPv4Range', DEFAULT_NETWORK_IP_RANGE)
         network['IPv4Range'] = ip_to_re_pattern(ip_range)
-        gateway = network.get('gatewayIPv4', u'10.240.0.1')
+        gateway = network.get('gatewayIPv4', DEFAULT_NETWORK_GATEWAY)
         network['gatewayIPv4'] = ip_to_re_pattern(gateway)
         return network
 
@@ -91,10 +98,14 @@ class TestNetworksBase(test_base.GCETestCase):
         self.assertObject(expected_network, network)
         return network
 
+    def _create_and_validate_network(self, options):
+        self._create_network(options)
+        return self._ensure_network_created(options)
+
 
 class TestNetworks(TestNetworksBase):
     def test_get_default_network(self):
-        name = 'default'
+        name = DEFAULT_NETWORK_NAME
         network = self._get_network(name)
         options = {
             'name': name
@@ -103,7 +114,7 @@ class TestNetworks(TestNetworksBase):
         self.assertObject(expected, network)
 
     def test_list_default_network(self):
-        name = 'default'
+        name = DEFAULT_NETWORK_NAME
         result = self._list_networks()
         result = self.assertFind(name, result)
         options = {
@@ -113,7 +124,7 @@ class TestNetworks(TestNetworksBase):
         self.assertObject(expected, result)
 
     def test_list_default_network_by_filter(self):
-        name = 'default'
+        name = DEFAULT_NETWORK_NAME
         result = self._list_networks(filter='name eq {}'.format(name))
         result = self.assertFind(name, result)
         options = {
@@ -130,8 +141,7 @@ class TestNetworks(TestNetworksBase):
         options = {
             'name': name,
         }
-        self._create_network(options)
-        self._ensure_network_created(options)
+        self._create_and_validate_network(options)
         self._delete_network(name)
 
     def test_create_network_with_ip_range(self):
@@ -158,8 +168,7 @@ class TestNetworks(TestNetworksBase):
             'IPv4Range': '10.242.0.0/16',
             'gatewayIPv4': '10.242.0.1'
         }
-        self._create_network(options)
-        self._ensure_network_created(options)
+        self._create_and_validate_network(options)
         self._delete_network(name)
 
     def test_list_networks_by_filter_name(self):
@@ -172,8 +181,7 @@ class TestNetworks(TestNetworksBase):
             options = {
                 'name': name,
             }
-            self._create_network(options)
-            networks[name] = self._ensure_network_created(options)
+            networks[name] = self._create_and_validate_network(options)
         for name in names:
             result = self._list_networks(filter='name eq {}'.format(name))
             network = self.assertFind(name, result)

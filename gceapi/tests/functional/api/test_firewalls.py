@@ -19,10 +19,6 @@ import copy
 from gceapi.tests.functional.api import test_networks
 
 
-def ip_to_re_pattern(ip):
-    return test_networks.ip_to_re_pattern(ip)
-
-
 class TestFirewallBase(test_networks.TestNetworksBase):
     @property
     def firewalls(self):
