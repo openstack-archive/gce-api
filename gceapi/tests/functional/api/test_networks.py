@@ -93,10 +93,6 @@ class TestNetworksBase(test_base.GCETestCase):
 
 
 class TestNetworks(TestNetworksBase):
-    @property
-    def _is_nova_network(self):
-        return self.cfg.networking == 'nova-network'
-
     def test_get_default_network(self):
         name = 'default'
         network = self._get_network(name)
@@ -127,7 +123,7 @@ class TestNetworks(TestNetworksBase):
         self.assertObject(expected, result)
 
     def test_create_network_default(self):
-        if self._is_nova_network:
+        if self.is_nova_network:
             self.skipTest('Skip network because of nova-network')
             return
         name = self._rand_name('testnetwork')
@@ -139,8 +135,8 @@ class TestNetworks(TestNetworksBase):
         self._delete_network(name)
 
     def test_create_network_with_ip_range(self):
-        if self._is_nova_network:
-            self.skipTest('Skip network because of nova-network')
+        if self.is_nova_network:
+            self.skipTest('Skip because of nova-network cannot create network')
             return
         name = self._rand_name('testnetwork')
         options = {
@@ -153,7 +149,7 @@ class TestNetworks(TestNetworksBase):
         self._delete_network(name)
 
     def test_create_network_with_gateway(self):
-        if self._is_nova_network:
+        if self.is_nova_network:
             self.skipTest('Skip network because of nova-network')
             return
         name = self._rand_name('testnetwork')
@@ -167,7 +163,7 @@ class TestNetworks(TestNetworksBase):
         self._delete_network(name)
 
     def test_list_networks_by_filter_name(self):
-        if self._is_nova_network:
+        if self.is_nova_network:
             self.skipTest('Skip network because of nova-network')
             return
         names = [self._rand_name('testnetwork') for _ in range(0, 3)]

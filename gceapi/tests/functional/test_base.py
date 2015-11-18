@@ -301,6 +301,10 @@ class GCETestCase(base.BaseTestCase):
     def is_real_gce(self):
         return self._credentials_provider.is_google_auth
 
+    @property
+    def is_nova_network(self):
+        return self.cfg.networking == 'nova-network'
+
     def _get_operations_request(self, name, project, zone, region):
         if zone is not None:
             return self.api.compute.zoneOperations().get(

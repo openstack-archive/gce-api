@@ -14,6 +14,7 @@
 
 import copy
 
+from oslo_config import cfg
 from oslo_log import log as logging
 
 from gceapi.api import base_api
@@ -31,6 +32,7 @@ PROTOCOL_MAP = {
     '17': 'udp',
 }
 LOG = logging.getLogger(__name__)
+CONF = cfg.CONF
 
 
 class API(base_api.API):
@@ -76,9 +78,18 @@ class API(base_api.API):
         return items
 
     def add_item(self, context, name, body, scope=None):
-        network = self._get_network_by_url(context, body['network'])
+        # expected that either network is provided in parameters or
+        # default network exists (as in Google)
+        network = self._get_network_by_url(
+            context,
+            body.get('network', CONF.default_network_name)
+        )
         self._check_rules(body)
-        group_description = body.get("description", "")
+        default_description = _("Firewall rules for network {}")
+        group_description = body.get(
+            "description",
+            default_description.format(network['name'])
+        )
         client = clients.nova(context)
         operation_util.start_operation(context)
         sg = client.security_groups.create(body['name'], group_description)
@@ -94,7 +105,6 @@ class API(base_api.API):
             raise
         new_firewall = utils.to_dict(client.security_groups.get(sg.id))
         new_firewall = self._prepare_firewall(new_firewall)
-        new_firewall["creationTimestamp"] = 1
         new_firewall["network_name"] = network["name"]
         new_firewall = self._add_db_item(context, new_firewall)
         self._process_callbacks(
@@ -202,7 +212,7 @@ class API(base_api.API):
         return network_api.API().get_item(context, network_name)
 
     def _check_rules(self, firewall):
-        if not firewall.get('sourceRanges') or firewall.get('sourceTags'):
+        if not (firewall.get('sourceRanges') or firewall.get('sourceTags')):
             msg = _("Not 'sourceRange' neither 'sourceTags' is provided")
             raise exception.InvalidRequest(msg)
         for allowed in firewall.get('allowed', []):
