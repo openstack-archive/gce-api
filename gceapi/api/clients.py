@@ -53,7 +53,7 @@ REQUIRED_NOVA_API_MICROVERSION = '2.3'
 _nova_api_version = None
 
 
-def service_session():
+def admin_session():
     auth = keystone_identity.Password(
         auth_url=CONF.keystone_url,
         username=CONF.keystone_authtoken['admin_user'],
@@ -126,19 +126,10 @@ def cinder(context, session=None):
     return _cinder
 
 
-def service_keystone(session=None):
-    s = session if session else service_session()
+def keystone(context, session=None):
+    s = session if session else create_session_for_context(context)
     client = keystone_client.Client(
         session=s,
-        auth_url=CONF.keystone_url
-    )
-    return client
-
-
-def keystone(context):
-    session = create_session_for_context(context)
-    client = keystone_client.Client(
-        session=session,
         auth_url=CONF.keystone_url
     )
     return client

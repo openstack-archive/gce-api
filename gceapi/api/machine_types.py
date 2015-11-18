@@ -34,7 +34,7 @@ class Controller(gce_common.Controller):
             # NOTE(Alex): Is not supported by Openstack
             "maximumPersistentDisks": 0,
             # NOTE(Alex): Is not supported by Openstack
-            "maximumPersistentDisksSizeGb": 0,
+            "maximumPersistentDisksSizeGb": '0',
             }
 
         if "OS-FLV-EXT-DATA:ephemeral" in flavor:

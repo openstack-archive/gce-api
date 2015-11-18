@@ -27,7 +27,7 @@ EXPECTED_FLAVORS = [{
         "memoryMb": 2048,
         "imageSpaceGb": 20,
         "maximumPersistentDisks": 0,
-        "maximumPersistentDisksSizeGb": 0,
+        "maximumPersistentDisksSizeGb": "0",
         "zone": "http://localhost/compute/v1beta15/projects/fake_project"
             "/zones/nova",
         "selfLink": "http://localhost/compute/v1beta15/projects/fake_project"
@@ -43,7 +43,7 @@ EXPECTED_FLAVORS = [{
         "memoryMb": 8192,
         "imageSpaceGb": 80,
         "maximumPersistentDisks": 0,
-        "maximumPersistentDisksSizeGb": 0,
+        "maximumPersistentDisksSizeGb": "0",
         "zone": "http://localhost/compute/v1beta15/projects/fake_project"
             "/zones/nova",
         "selfLink": "http://localhost/compute/v1beta15/projects/fake_project"

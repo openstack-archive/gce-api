@@ -29,8 +29,9 @@ class TestDiskTypes(test_base.GCETestCase):
     @property
     def disk_types(self):
         res = self.api.compute.diskTypes()
-        self.assertIsNotNone(res,
-                             'Null regions object, api is not built properly')
+        self.assertIsNotNone(
+            res,
+            'Null diskTypes object, api is not built properly')
         return res
 
     def setUp(self):

@@ -32,8 +32,8 @@ class API(base_api.API):
         return self.KIND
 
     def get_item(self, context, name, scope=None):
-        session = clients.service_session()
-        keystone = clients.service_keystone(session=session)
+        session = clients.admin_session()
+        keystone = clients.keystone(context, session=session)
         project = keystone.projects.get(context.project_id)
         result = utils.to_dict(project)
         result["keypair"] = self._get_gce_keypair(context)

@@ -40,8 +40,8 @@ class Controller(object):
         if key in self._files:
             return self._files[key]
 
-        session = clients.service_session()
-        keystone = clients.service_keystone(session)
+        session = clients.admin_session()
+        keystone = clients.keystone(None, session=session)
         if not keystone.has_service_catalog():
             keystone.authenticate(token=session.get_token())
         catalog = keystone.service_catalog.get_data()
