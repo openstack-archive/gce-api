@@ -211,20 +211,35 @@ function install_gceapi() {
 
 # start_gceapi() - Start running processes, including screen
 function start_gceapi() {
-    screen_it gce-api "cd $GCEAPI_DIR && $GCEAPI_BIN_DIR/gce-api --config-file $GCEAPI_CONF_DIR/gceapi.conf"
+    run_process gce-api "$GCEAPI_BIN_DIR/gce-api --config-file $GCEAPI_CONF_DIR/gceapi.conf"
+
+    echo "Waiting for GCE API to start..."
+    if ! wait_for_service $SERVICE_TIMEOUT \
+                "$SERVICE_PROTOCOL://$SERVICE_HOST:$GCEAPI_SERVICE_PORT/"; then
+        die $LINENO "GCE API did not start"
+    fi
 }
 
 
 # stop_gceapi() - Stop running processes
 function stop_gceapi() {
     # Kill the gceapi screen windows
-    screen -S $SCREEN_NAME -p gce-api -X kill
+    stop_process gce-api
 }
 
 function cleanup_gceapi() {
 
     # Cleanup keystone signing dir
     sudo rm -rf $GCEAPI_KEYSTONE_SIGNING_DIR
+}
+
+function configure_functional_tests() {
+    (source $GCEAPI_DIR/devstack/create_config "functional_tests.conf")
+    if [[ "$?" -ne "0" ]]; then
+        warn $LINENO "GCE API tests config could not be created."
+    elif is_service_enabled tempest; then
+        cat "$GCEAPI_DIR/functional_tests.conf" >> $TEMPEST_CONFIG
+    fi
 }
 
 # main dispatcher
@@ -239,6 +254,7 @@ elif [[ "$1" == "stack" && "$2" == "extra" ]]; then
     echo_summary "Initializing gce-api"
     init_gceapi
     start_gceapi
+    configure_functional_tests
 fi
 
 if [[ "$1" == "unstack" ]]; then
