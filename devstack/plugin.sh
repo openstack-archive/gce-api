@@ -227,6 +227,15 @@ function cleanup_gceapi() {
     sudo rm -rf $GCEAPI_KEYSTONE_SIGNING_DIR
 }
 
+function configure_functional_tests() {
+    (source $GCEAPI_DIR/devstack/create_config "functional_tests.conf")
+    if [[ "$?" -ne "0" ]]; then
+        warn $LINENO "GCE API tests config could not be created."
+    elif is_service_enabled tempest; then
+        cat "$GCEAPI_DIR/functional_tests.conf" >> $TEMPEST_CONFIG
+    fi
+}
+
 # main dispatcher
 if [[ "$1" == "stack" && "$2" == "install" ]]; then
     echo_summary "Installing gce-api"
@@ -239,6 +248,7 @@ elif [[ "$1" == "stack" && "$2" == "extra" ]]; then
     echo_summary "Initializing gce-api"
     init_gceapi
     start_gceapi
+    configure_functional_tests
 fi
 
 if [[ "$1" == "unstack" ]]; then
