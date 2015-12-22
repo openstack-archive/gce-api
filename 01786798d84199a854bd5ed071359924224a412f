@@ -1,0 +1,8 @@
+Code-Review+2: Alexandre Levine <alexandrelevine@gmail.com>
+Workflow+1: Alexandre Levine <alexandrelevine@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 22 Dec 2015 15:00:54 +0000
+Reviewed-on: https://review.openstack.org/260004
+Project: openstack/gce-api
+Branch: refs/heads/master
