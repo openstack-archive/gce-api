@@ -41,7 +41,7 @@ class TestNetworksBase(test_base.GCETestCase):
 
     def _create_network(self, options):
         project_id = self.cfg.project_id
-        self.trace('Crete network with options {}'.format(options))
+        self.trace('Create network with options {}'.format(options))
         request = self.networks.insert(
             project=project_id,
             body=options)

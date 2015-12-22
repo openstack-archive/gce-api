@@ -36,7 +36,7 @@ class TestAddressesBase(test_base.GCETestCase):
         cfg = self.cfg
         project_id = cfg.project_id
         region = cfg.region
-        self.trace('Crete address with options {}'.format(options))
+        self.trace('Create address with options {}'.format(options))
         request = self.addresses.insert(
             project=project_id,
             region=region,

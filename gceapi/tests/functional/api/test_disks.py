@@ -180,7 +180,7 @@ class TestDiskBase(TestImagesBase):
         cfg = self.cfg
         project_id = cfg.project_id
         zone = cfg.zone
-        self.trace('Crete disk with options {} source_image={}'.
+        self.trace('Create disk with options {} source_image={}'.
                    format(options, source_image))
         request = self.disks.insert(
             project=project_id,
@@ -269,8 +269,9 @@ class TestDiskBase(TestImagesBase):
         self._create_disk(options, source_image=image['selfLink'])
         options['sourceImage'] = image['selfLink']
         options['sourceImageId'] = image['id']
-        # TODO(alexey-mr): image diskSizeGb is not supported by OS GCE
-        # options['sizeGb'] = image['diskSizeGb']
+        if self.full_compatibility:
+            # TODO(alexey-mr): image diskSizeGb is not supported by OS GCE
+            options['sizeGb'] = image['diskSizeGb']
         return self._ensure_disk_created(options)
 
     def _create_snapshot(self, disk_name, options):
@@ -331,16 +332,12 @@ class TestDisks(TestDiskBase):
             self._delete_disk(name)
 
     def test_create_disk_from_image(self):
-        name = self._rand_name('testdisk')
-        image = 'projects/{}'.format(self.cfg.image)
-        options = {
-            'name': name,
-        }
-        self._create_disk(options, source_image=image)
+        image_name, image_project = self._parse_image_url(self.cfg.image)
+        image = self._get_image(image_name, image_project)
+        disk = self._create_disk_from_image(image)
         # TODO(alexey-mr): image diskSizeGb is not supported by OS GCE
         # options['sizeGb'] = self._get_image_size(self.cfg.image)
-        self._ensure_disk_created(options, source_image=image)
-        self._delete_disk(name)
+        self._delete_disk(disk['name'])
 
     def test_create_disk_from_snapshot(self):
         data = self._create_disk_and_snapshot()

@@ -22,10 +22,10 @@ OPTIONS = [
     # Generic options
     cfg.IntOpt('build_timeout',
                default=180,
-               help='Timeout'),
+               help='Timeout for build resources'),
     cfg.IntOpt('build_interval',
                default=1,
-               help='Interval'),
+               help='Interval between acquiring resource in wait func'),
 
     # GCE auth options
     cfg.StrOpt('cred_type',
@@ -35,14 +35,14 @@ OPTIONS = [
                     '\n\tgcloud_auth - use app credentials that should be'
                         'obtained before via gcloud auth'),
     cfg.StrOpt('username',
-               default='demo',
-               help='User name'),
+               default=None,
+               help='User name for OpenStack identity'),
     cfg.StrOpt('password',
-               default='password',
-               help='User password'),
+               default=None,
+               help='User password for user in OpenStack'),
     cfg.StrOpt('auth_url',
                default='http://localhost:5000/v2.0/',
-               help='OAuth API relative URL'),
+               help='Auth API relative URL in case of OpenStack identity'),
 
     # GCE API schema
     cfg.StrOpt('schema',
@@ -71,13 +71,13 @@ OPTIONS = [
     # Name and ID, where Name is corresponds to Project ID in Google, ID is
     # Openstack ID's and has no relation to Google's ID and Number.
     cfg.StrOpt('project_id',
-               default='test',
+               default=None,
                help='GCE Project ID for testing'),
     cfg.StrOpt('zone',
                default='nova',
                help='GCE Zone for testing'),
     cfg.StrOpt('region',
-               default='us-central1',
+               default='regionone',
                help='GCE Region for testing'),
     cfg.StrOpt('networking',
                default='neutron',
@@ -87,6 +87,7 @@ OPTIONS = [
                default='n1-standard-1',
                help='Machine type - a type of instance ot be created'),
     cfg.StrOpt('image',
-               default='debian-cloud/global/images/debian-7-wheezy-v20150929',
-               help='Image to create instances'),
+               default=None,
+               help='Image to create instances. For example:'
+               'debian-cloud/global/images/debian-7-wheezy-v20150929'),
 ]

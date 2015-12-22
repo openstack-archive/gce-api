@@ -39,7 +39,7 @@ class TestRouteBase(test_base.GCETestCase):
 
     def _create_route(self, options):
         project_id = self.cfg.project_id
-        self.trace('Crete route with options {}'.format(options))
+        self.trace('Create route with options {}'.format(options))
         request = self.routes.insert(
             project=project_id,
             body=options)

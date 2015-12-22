@@ -30,7 +30,7 @@ class TestFirewallBase(test_networks.TestNetworksBase):
 
     def _create_firewall(self, options):
         project_id = self.cfg.project_id
-        self.trace('Crete firewall with options {}'.format(options))
+        self.trace('Create firewall with options {}'.format(options))
         request = self.firewalls.insert(
             project=project_id,
             body=options)

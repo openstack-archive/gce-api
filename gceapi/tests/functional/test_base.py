@@ -44,9 +44,9 @@ def trace(msg):
 
 
 def safe_call(method):
-    def wrapper(self, *args, **kwargs):
+    def wrapper(*args, **kwargs):
         try:
-            return method(self, *args, **kwargs)
+            return method(*args, **kwargs)
         except Exception as err:
             trace('Exception {}'.format(err))
             bt = traceback.format_exc()
@@ -158,7 +158,7 @@ class GCEApi(object):
     @property
     def _host_url(self):
         cfg = CONF.gce
-        if self._is_standard_port(cfg.protocol, cfg.port):
+        if not cfg.port or self._is_standard_port(cfg.protocol, cfg.port):
             return '{}://{}'.format(cfg.protocol, cfg.host)
         return '{}://{}:{}'.format(cfg.protocol, cfg.host, cfg.port)
 
@@ -356,7 +356,8 @@ class GCETestCase(base.BaseTestCase):
     @safe_call
     def _remove_cleanup(self, method, *args, **kwargs):
         v = (method, args, kwargs)
-        self._cleanups.remove(v)
+        if v in self._cleanups:
+            self._cleanups.remove(v)
 
     def _execute_async_request(self, request, project, zone=None, region=None):
         self.trace_request(request)
