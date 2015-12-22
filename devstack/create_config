@@ -1,0 +1,133 @@
+#!/bin/bash
+#
+# create_config script for devstack plugin script
+# Build config for run functional tests with or wuthout tempest
+
+set -o xtrace
+set +o errexit
+
+TIMEOUT=${TIMEOUT:-180}
+GCE_SCHEMA=${GCE_SCHEMA:-etc/gceapi/protocols/v1.json}
+GCE_CRED_TYPE=${GCE_CRED_TYPE:-os_token}
+GCE_API_PROTOCOL=${GCE_API_PROTOCOL:-http}
+GCE_HOST=${GCE_HOST:-localhost}
+GCE_PORT=${GCE_PORT:-8787}
+GCE_DISCOVERY_URL=${GCE_DISCOVERY_URL:-/discovery/v1/apis/\{api\}/\{apiVersion\}/rest}
+ZONE=${ZONE:-nova}
+REGION=${REGION:-region-one}
+
+
+TEST_CONFIG="$1"
+if [[ -z "$TEST_CONFIG" ]]; then
+  die $LINENO "Please pass config name"
+fi
+sudo rm -f $GCEAPI_DIR/$TEST_CONFIG
+
+if [[ -n "$TOP_DIR" ]]; then
+  source $TOP_DIR/accrc/admin/admin
+  unset OS_AUTH_TYPE
+fi
+
+openstack endpoint list
+if [[ "$?" -ne "0" ]]; then
+  die $LINENO  "OpenStack CLI doesn't work. Looks like credentials are absent."
+fi
+
+
+# create separate user/project
+project_name="project-$(cat /dev/urandom | tr -cd 'a-f0-9' | head -c 8)"
+eval $(openstack project create -f shell -c id $project_name)
+project_id=$id
+[[ -n "$project_id" ]] || { echo "Can't create project"; exit 1; }
+user_name="user-$(cat /dev/urandom | tr -cd 'a-f0-9' | head -c 8)"
+password='password'
+eval $(openstack user create "$user_name" --project "$project_id" --password "$password" --email "$user_name@example.com" -f shell -c id)
+user_id=$id
+[[ -n "$user_id" ]] || { echo "Can't create user"; exit 1; }
+# add 'Member' role for swift access
+role_id=$(openstack role show  Member -c id -f value)
+openstack role add --project $project_id --user $user_id $role_id
+
+# prepare flavors
+flavor_name="n1.standard.1"
+if [[ -z "$(nova flavor-list | grep $flavor_name)" ]]; then
+  nova flavor-create --is-public True $flavor_name 16 512 0 1
+  [[ "$?" -eq 0 ]] || { echo "Failed to prepare flavor"; exit 1; }
+fi
+
+# create default network
+if [[ -n $(openstack service list | grep neutron) ]]; then
+  # neutron networking
+  networking="neutron"
+  net_id=$(neutron net-create --tenant-id $project_id "default" | grep ' id ' | awk '{print $4}')
+  [[ -n "$net_id" ]] || { echo "net-create failed"; exit 1; }
+  subnet_id=$(neutron subnet-create --tenant-id $project_id --ip_version 4 --gateway 10.240.0.1 --name "private_subnet" $net_id 10.240.0.0/16 | grep ' id ' | awk '{print $4}')
+  [[ -n "$subnet_id" ]] || { echo "subnet-create failed"; exit 1; }
+  router_id=$(neutron router-create --tenant-id $project_id "private_router" | grep ' id ' | awk '{print $4}')
+  [[ -n "$router_id" ]] || { echo "router-create failed"; exit 1; }
+  neutron router-interface-add $router_id $subnet_id
+  [[ "$?" -eq 0 ]] || { echo "router-interface-add failed"; exit 1; }
+  public_net_id=$(neutron net-list | grep public | awk '{print $2}')
+  [[ -n "$public_net_id" ]] || { echo "can't find public network"; exit 1; }
+  neutron router-gateway-set $router_id $public_net_id
+  [[ "$?" -eq 0 ]] || { echo "router-gateway-set failed"; exit 1; }
+else
+  # nova networking
+  networking="nova-network"
+  nova network-create "default" --fixed-range-v4 10.240.0.0/16 --gateway 10.240.0.1
+fi
+
+#create image in raw format
+os_image_name="cirros-0.3.4-raw-image"
+if [[ -z "$(openstack image list | grep $os_image_name)" ]]; then
+  image_name="cirros-0.3.4-x86_64-disk.img"
+  cirros_image_url="http://download.cirros-cloud.net/0.3.4/$image_name"
+  sudo rm -f /tmp/$image_name
+  wget -nv -P /tmp $cirros_image_url
+  [[ "$?" -eq 0 ]] || { echo "Failed to download image"; exit 1; }
+  openstack image create --disk-format raw --container-format bare --public --file "/tmp/$image_name" $os_image_name
+  [[ "$?" -eq 0 ]] || { echo "Failed to prepare image"; exit 1; }
+fi
+
+export OS_PROJECT_NAME=$project_name
+export OS_TENANT_NAME=$project_name
+export OS_USERNAME=$user_name
+export OS_PASSWORD=$password
+
+
+# convert flavor name: becase GCE dowsn't allows '.' and converts '-' into '.'
+flavor_name=${flavor_name//\./-}
+
+sudo bash -c "cat > $GCEAPI_DIR/$TEST_CONFIG <<EOF
+[gce]
+# Generic options
+build_timeout = $TIMEOUT
+build_interval = 1
+
+# GCE API schema
+schema = $GCE_SCHEMA
+
+# GCE auth options
+cred_type = $GCE_CRED_TYPE
+auth_url = $OS_AUTH_URL
+username = $OS_USERNAME
+password = $OS_PASSWORD
+
+# GCE services address
+protocol = $GCE_API_PROTOCOL
+host = $GCE_HOST
+port = $GCE_PORT
+
+# GCE API URLs
+discovery_url = $GCE_DISCOVERY_URL
+
+# GCE resource IDs for testing
+project_id = $OS_PROJECT_NAME
+zone = $ZONE
+networking = $networking
+region = $REGION
+machine_type = $flavor_name
+image = $OS_PROJECT_NAME/global/images/$os_image_name
+EOF"
+
+sudo chown -f $STACK_USER $GCEAPI_DIR/$TEST_CONFIG

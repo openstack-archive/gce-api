@@ -15,6 +15,7 @@
 #    under the License.
 
 import json
+import os
 import re
 import string
 import time
@@ -32,7 +33,7 @@ from gceapi.tests.functional import config
 from gceapi.tests.functional import credentials
 
 
-CONF = config.CONF.gce
+CONF = config.CONF
 LOG = logging.getLogger("gceapi")
 API_NAME = 'compute'
 API_VER = 'v1'
@@ -87,6 +88,30 @@ class LocalRefResolver(jsonschema.RefResolver):
         return super(LocalRefResolver, self).resolve_from_url(url)
 
 
+class SchemaHolder(object):
+
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(SchemaHolder, cls).__new__(
+                cls, *args, **kwargs)
+        return cls._instance
+
+    _schema = None
+
+    def get_schema(self, schema_file):
+        if self._schema:
+            return self._schema
+
+        schema_path = os.path.join(config.get_base_dir(), schema_file)
+        # Load API scheme for API calls validation
+        with open(schema_path, 'r') as f:
+            self._schema = json.load(f)
+
+        return self._schema
+
+
 class GCEApi(object):
     def __init__(self, cred_provider):
         self._compute = None
@@ -95,7 +120,8 @@ class GCEApi(object):
         self._scheme_ref_resolver = 0
 
     def init(self):
-        self._schema = schema.Schemas(CONF.schema)
+        _schema = SchemaHolder().get_schema(CONF.gce.schema)
+        self._schema = schema.Schemas(_schema)
         self._scheme_ref_resolver = LocalRefResolver.from_schema(
             self._schema.schemas)
         self._build_api()
@@ -131,15 +157,15 @@ class GCEApi(object):
 
     @property
     def _host_url(self):
-        cfg = CONF
+        cfg = CONF.gce
         if self._is_standard_port(cfg.protocol, cfg.port):
             return '{}://{}'.format(cfg.protocol, cfg.host)
         return '{}://{}:{}'.format(cfg.protocol, cfg.host, cfg.port)
 
     @property
     def _discovery_url(self):
-        t = '{}{}' if CONF.discovery_url.startswith('/') else '{}/{}'
-        return t.format(self._host_url, CONF.discovery_url)
+        t = '{}{}' if CONF.gce.discovery_url.startswith('/') else '{}/{}'
+        return t.format(self._host_url, CONF.gce.discovery_url)
 
     @property
     def _api_url(self):
@@ -147,14 +173,14 @@ class GCEApi(object):
 
     @property
     def project_url(self):
-        return '{}/projects/{}'.format(self._api_url, CONF.project_id)
+        return '{}/projects/{}'.format(self._api_url, CONF.gce.project_id)
 
     def get_zone_url(self, resource=None, zone=None):
         if resource and self._is_absolute_url(resource):
             return resource
         z = zone
         if z is None:
-            z = CONF.zone
+            z = CONF.gce.zone
         if not self._is_absolute_url(z):
             t = '{}/{}' if z.startswith('zones/') else '{}/zones/{}'
             z = t.format(self.project_url, z)
@@ -167,7 +193,7 @@ class GCEApi(object):
             return resource
         r = region
         if r is None:
-            r = CONF.region
+            r = CONF.gce.region
         if not self._is_absolute_url(r):
             t = '{}/{}' if r.startswith('regions/') else '{}/regions/{}'
             r = t.format(self.project_url, r)
@@ -197,7 +223,7 @@ class GCETestCase(base.BaseTestCase):
 
     @property
     def cfg(self):
-        return CONF
+        return CONF.gce
 
     @staticmethod
     def trace(msg):
@@ -209,7 +235,7 @@ class GCETestCase(base.BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls._credentials_provider = credentials.CredentialsProvider(CONF)
+        cls._credentials_provider = credentials.CredentialsProvider(CONF.gce)
         cls._api = GCEApi(cls._credentials_provider)
         cls._api.init()
         super(GCETestCase, cls).setUpClass()
