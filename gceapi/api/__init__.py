@@ -64,8 +64,27 @@ gce_opts = [
         help='Default new network ip range if it is not provided'),
     ]
 
+KEYSTONE_AUTHTOKEN_GROUP = cfg.OptGroup(
+    name='keystone_authtoken',
+    title='keystone_authtoken')
+
+KEYSTONE_AUTHTOKEN_OPTS = [
+    cfg.StrOpt('admin_user',
+               default='admin',
+               help='Admin user'),
+    cfg.StrOpt('admin_password',
+               default='password',
+               help='Admin user password'),
+    cfg.StrOpt('admin_tenant_name',
+               default='service',
+               help='Admin tenant'),
+]
+
+
 CONF = cfg.CONF
 CONF.register_opts(gce_opts)
+CONF.register_group(KEYSTONE_AUTHTOKEN_GROUP)
+CONF.register_opts(KEYSTONE_AUTHTOKEN_OPTS, group=KEYSTONE_AUTHTOKEN_GROUP)
 
 
 class APIRouter(wsgi.Router):
