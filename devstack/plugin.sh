@@ -48,37 +48,34 @@ function recreate_endpoint {
     local description=$2
     local port=$3
 
-    if [[ "$KEYSTONE_CATALOG_BACKEND" = 'sql' ]]; then
-
-        # Remove nova's gce service/endpoint
-        local endpoint_id=$(openstack endpoint list \
-            --column "ID" \
-            --column "Region" \
-            --column "Service Name" \
-            | grep " $REGION_NAME " \
-            | grep " $endpoint " | get_field 1)
-        if [[ -n "$endpoint_id" ]]; then
-            openstack endpoint delete $endpoint_id
-        fi
-        local service_id=$(openstack service list \
-            -c "ID" -c "Name" \
-            | grep " $endpoint " | get_field 1)
-        if [[ -n "$service_id" ]]; then
-            openstack service delete $service_id
-        fi
-
-        local service_id=$(openstack service create \
-            $endpoint \
-            --name "$endpoint" \
-            --description="$description" \
-            -f value -c id)
-        openstack --os-identity-api-version 3 endpoint create --region "$REGION_NAME" \
-            $service_id public "$SERVICE_PROTOCOL://$SERVICE_HOST:$port/"
-        openstack --os-identity-api-version 3 endpoint create --region "$REGION_NAME" \
-            $service_id admin "$SERVICE_PROTOCOL://$SERVICE_HOST:$port/"
-        openstack --os-identity-api-version 3 endpoint create --region "$REGION_NAME" \
-            $service_id internal "$SERVICE_PROTOCOL://$SERVICE_HOST:$port/"
+    # Remove nova's gce service/endpoint
+    local endpoint_id=$(openstack endpoint list \
+        --column "ID" \
+        --column "Region" \
+        --column "Service Name" \
+        | grep " $REGION_NAME " \
+        | grep " $endpoint " | get_field 1)
+    if [[ -n "$endpoint_id" ]]; then
+        openstack endpoint delete $endpoint_id
     fi
+    local service_id=$(openstack service list \
+        -c "ID" -c "Name" \
+        | grep " $endpoint " | get_field 1)
+    if [[ -n "$service_id" ]]; then
+        openstack service delete $service_id
+    fi
+
+    local service_id=$(openstack service create \
+        $endpoint \
+        --name "$endpoint" \
+        --description="$description" \
+        -f value -c id)
+    openstack --os-identity-api-version 3 endpoint create --region "$REGION_NAME" \
+        $service_id public "$SERVICE_PROTOCOL://$SERVICE_HOST:$port/"
+    openstack --os-identity-api-version 3 endpoint create --region "$REGION_NAME" \
+        $service_id admin "$SERVICE_PROTOCOL://$SERVICE_HOST:$port/"
+    openstack --os-identity-api-version 3 endpoint create --region "$REGION_NAME" \
+        $service_id internal "$SERVICE_PROTOCOL://$SERVICE_HOST:$port/"
 }
 
 
