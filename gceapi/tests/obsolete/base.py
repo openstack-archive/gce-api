@@ -20,7 +20,7 @@ import unittest
 import urlparse
 
 from oslo_log import log as logging
-from tempest_lib.common import rest_client
+from tempest.lib.common import rest_client
 import testtools
 
 from tempest.common.utils.linux import remote_client
