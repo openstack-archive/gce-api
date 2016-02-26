@@ -26,8 +26,8 @@ from googleapiclient import discovery
 from googleapiclient import schema
 import jsonschema
 from oslo_log import log as logging
-from tempest_lib import base
-from tempest_lib.common.utils import data_utils
+from tempest.lib import base
+from tempest.lib.common.utils import data_utils
 
 from gceapi.tests.functional import config
 from gceapi.tests.functional import credentials
