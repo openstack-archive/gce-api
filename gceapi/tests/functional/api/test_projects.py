@@ -22,18 +22,18 @@ from gceapi.tests.functional.api import test_instances
 
 
 SSH_KEY = ('testuser:ssh-rsa '
-               'AAAAB3NzaC1yc2EAAAADAQABAAACAQDhxWFq3wWIW8QSJsbTFT9x+eSvOt5jAs'
-               'UDBW15DUU2l5Qh1E/DXtv4NnwiI7RDquBI0YAtEcNN1mYwZWNwNs+VSW39YJCS'
-               'RhUQ/WQA3bp3jrTqi8uitNnAW1EprGFAxcQHQV0g64WC/8/Ou6VYMV8ChaNPjN'
-               'mY1Yzy6maGJDizYLbJ/tMnfNBQoMF2HTKPhC9edtR2ZQT6SY9wcI1xFk6+pqQt'
-               '69sGAYA3xoleqGRFwxi0xwMKmyKIZ7Uvp7jH6vJraTGIJmhfU4ueZKWBzwFcKM'
-               'XBZbpBR4lvxHrYX8W4BqMbvFvVkX41pzvlc0gmCW/F3Iyoldqfb9pt+72/zaht'
-               'yw7sIKeSJaTl0WlHwUgaGitA1pobVK+QfEXmR1uASovAiSqYiy3vN0aLiQI/oW'
-               '5gfMgKBfb0jDv9eTh+V8az4akrxV7HejMWxM+odhlaXTvT30VIpuvjndCGXR7G'
-               '9PCyALf050VstpepLuxj+eGV9T/pfZ+XrUAVlZneIoNFr41ucR7TwskrgeLRRF'
-               '/fTYu9gw9rLYNhjzbJIOuAXLLcHXFQY4EXxRvy/pE5Fj4Z5yI8P/u0yNRgSCjW'
-               'xO+hr1qwY62k6cW2TBDxU2G+i7UOQlPii2lUg42cy14bguPQVlZPat/yMfg1r8'
-               'Co/MPXQ1MG3H2O4SdTjSTOsKviunZNOQ== testuser@gmail.com')
+           'AAAAB3NzaC1yc2EAAAADAQABAAACAQDhxWFq3wWIW8QSJsbTFT9x+eSvOt5jAs'
+           'UDBW15DUU2l5Qh1E/DXtv4NnwiI7RDquBI0YAtEcNN1mYwZWNwNs+VSW39YJCS'
+           'RhUQ/WQA3bp3jrTqi8uitNnAW1EprGFAxcQHQV0g64WC/8/Ou6VYMV8ChaNPjN'
+           'mY1Yzy6maGJDizYLbJ/tMnfNBQoMF2HTKPhC9edtR2ZQT6SY9wcI1xFk6+pqQt'
+           '69sGAYA3xoleqGRFwxi0xwMKmyKIZ7Uvp7jH6vJraTGIJmhfU4ueZKWBzwFcKM'
+           'XBZbpBR4lvxHrYX8W4BqMbvFvVkX41pzvlc0gmCW/F3Iyoldqfb9pt+72/zaht'
+           'yw7sIKeSJaTl0WlHwUgaGitA1pobVK+QfEXmR1uASovAiSqYiy3vN0aLiQI/oW'
+           '5gfMgKBfb0jDv9eTh+V8az4akrxV7HejMWxM+odhlaXTvT30VIpuvjndCGXR7G'
+           '9PCyALf050VstpepLuxj+eGV9T/pfZ+XrUAVlZneIoNFr41ucR7TwskrgeLRRF'
+           '/fTYu9gw9rLYNhjzbJIOuAXLLcHXFQY4EXxRvy/pE5Fj4Z5yI8P/u0yNRgSCjW'
+           'xO+hr1qwY62k6cW2TBDxU2G+i7UOQlPii2lUg42cy14bguPQVlZPat/yMfg1r8'
+           'Co/MPXQ1MG3H2O4SdTjSTOsKviunZNOQ== testuser@gmail.com')
 
 
 class TestProjects(test_instances.TestInstancesBase):
@@ -99,8 +99,11 @@ class TestProjects(test_instances.TestInstancesBase):
         # save current project metadata
         before_test_state = self._get_project()
         before_test_metadata = before_test_state['commonInstanceMetadata']
-        before_test_metadata.pop('kind', None)
-        before_test_metadata.pop('fingerprint', None)
+        if 'fingerprint' in before_test_metadata:
+            fingerprint = {
+                'fingerprint': before_test_metadata.get('fingerprint')
+            }
+            before_test_metadata.pop('fingerprint', None)
         self._add_cleanup(self._set_common_metadata, before_test_metadata)
         # do test
         metadata = {
@@ -123,6 +126,7 @@ class TestProjects(test_instances.TestInstancesBase):
         self._set_common_metadata(before_test_metadata)
         self._remove_cleanup(self._set_common_metadata, before_test_metadata)
         project = self._get_project()
+        before_test_state['commonInstanceMetadata'].update(fingerprint)
         self.assertObject(before_test_state, project)
 
     def test_set_common_metadata_ssh_keys(self):
