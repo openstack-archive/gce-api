@@ -26,10 +26,10 @@ import eventlet
 import greenlet
 from oslo_config import cfg
 from oslo_log import log as logging
+from oslo_service import eventlet_backdoor
 from oslo_utils import importutils
 
 from gceapi.i18n import _
-from gceapi.openstack.common import eventlet_backdoor
 from gceapi import wsgi
 
 LOG = logging.getLogger(__name__)
@@ -132,7 +132,6 @@ class ServiceLauncher(Launcher):
         for flag in CONF:
             flag_get = CONF.get(flag, None)
             # hide flag contents from log if contains a password
-            # should use secret flag when switch over to openstack-common
             if ("_password" in flag or "_key" in flag or
                     (flag == "sql_connection" and "mysql:" in flag_get)):
                 LOG.debug(_('%(flag)s : FLAG SET ') % {'flag': flag})
