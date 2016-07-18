@@ -19,24 +19,18 @@
 
 """RequestContext: context for requests that persist through all of gceapi."""
 
-import uuid
-
+from oslo_context import context
 from oslo_log import log as logging
 from oslo_utils import timeutils
 
 from gceapi import exception
 from gceapi.i18n import _
-from gceapi.openstack.common import local
 
 
 LOG = logging.getLogger(__name__)
 
 
-def generate_request_id():
-    return 'req-' + str(uuid.uuid4())
-
-
-class RequestContext(object):
+class RequestContext(context.RequestContext):
     """Security context and request information.
 
     Represents the user taking a given action within the system.
@@ -59,13 +53,21 @@ class RequestContext(object):
         :param kwargs: Extra arguments that might be present, but we ignore
             because they possibly came in from older rpc messages.
         """
+
+        super(RequestContext, self).__init__(auth_token=auth_token,
+                                             user=user_id,
+                                             tenant=project_id,
+                                             is_admin=is_admin,
+                                             request_id=request_id,
+                                             overwrite=overwrite,
+                                             roles=roles)
+
         if kwargs:
             LOG.warning(_('Arguments dropped when creating context: %s') %
                     str(kwargs))
 
         self.user_id = user_id
         self.project_id = project_id
-        self.roles = roles or []
         self.read_deleted = read_deleted
         self.remote_address = remote_address
         if not timestamp:
@@ -73,20 +75,12 @@ class RequestContext(object):
         if isinstance(timestamp, basestring):
             timestamp = timeutils.parse_strtime(timestamp)
         self.timestamp = timestamp
-        if not request_id:
-            request_id = generate_request_id()
-        self.request_id = request_id
-        self.auth_token = auth_token
 
         self.service_catalog = service_catalog
 
         self.user_name = user_name
         self.project_name = project_name
-        self.is_admin = is_admin
-        #if self.is_admin is None:
-        #    self.is_admin = policy.check_is_admin(self)
-        if overwrite or not hasattr(local.store, 'context'):
-            self.update_store()
+
         self.operation = None
         self.operation_start_time = None
         self.operation_get_progress_method = None
@@ -108,41 +102,23 @@ class RequestContext(object):
     read_deleted = property(_get_read_deleted, _set_read_deleted,
                             _del_read_deleted)
 
-    def update_store(self):
-        local.store.context = self
-
     def to_dict(self):
-        return {'user_id': self.user_id,
-                'project_id': self.project_id,
-                'is_admin': self.is_admin,
-                'read_deleted': self.read_deleted,
-                'roles': self.roles,
-                'remote_address': self.remote_address,
-                'timestamp': timeutils.strtime(self.timestamp),
-                'request_id': self.request_id,
-                'auth_token': self.auth_token,
-                'user_name': self.user_name,
-                'service_catalog': self.service_catalog,
-                'project_name': self.project_name,
-                'tenant': self.tenant,
-                'user': self.user}
+        values = super(RequestContext, self).to_dict()
+        values.update({
+            'user_id': self.user_id,
+            'project_id': self.project_id,
+            'read_deleted': self.read_deleted,
+            'remote_address': self.remote_address,
+            'timestamp': timeutils.strtime(self.timestamp),
+            'user_name': self.user_name,
+            'project_name': self.project_name,
+            'service_catalog': self.service_catalog
+        })
+        return values
 
     @classmethod
     def from_dict(cls, values):
         return cls(**values)
-
-    # NOTE(sirp): the openstack/common version of RequestContext uses
-    # tenant/user whereas the gceapi version uses project_id/user_id. We need
-    # this shim in order to use context-aware code from openstack/common, like
-    # logging, until we make the switch to using openstack/common's version of
-    # RequestContext.
-    @property
-    def tenant(self):
-        return self.project_id
-
-    @property
-    def user(self):
-        return self.user_id
 
 
 def is_user_context(context):
