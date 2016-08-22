@@ -35,4 +35,4 @@ class GCETempestPlugin(plugins.TempestPlugin):
                                       gce_config.OPTIONS)
 
     def get_opt_lists(self):
-        return [(gce_config.OPTIONS_GROUP.name, config.OPTIONS)]
+        return [(gce_config.OPTIONS_GROUP.name, gce_config.OPTIONS)]
