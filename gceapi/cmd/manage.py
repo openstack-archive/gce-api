@@ -17,7 +17,6 @@
   CLI interface for GCE API management.
 """
 
-import os
 import sys
 
 from oslo_config import cfg
@@ -61,22 +60,13 @@ command_opt = cfg.SubCommandOpt('command',
 
 
 def main():
+    """Parse options and call the appropriate class/method."""
     CONF.register_cli_opt(command_opt)
-    try:
-        config.parse_args(sys.argv)
-        log.setup(CONF, "gceapi")
-    except cfg.ConfigFilesNotFoundError:
-        cfgfile = CONF.config_file[-1] if CONF.config_file else None
-        if cfgfile and not os.access(cfgfile, os.R_OK):
-            st = os.stat(cfgfile)
-            print(_("Could not read %s. Re-running with sudo") % cfgfile)
-            try:
-                os.execvp('sudo', ['sudo', '-u', '#%s' % st.st_uid] + sys.argv)
-            except Exception:
-                print(_('sudo failed, continuing as if nothing happened'))
-
-        print(_('Please re-run gce-api-manage as root.'))
-        return(2)
+    config.parse_args(sys.argv)
+    logging.set_defaults(
+        default_log_levels=logging.get_default_log_levels() +
+        _EXTRA_DEFAULT_LOG_LEVELS)
+    logging.setup(CONF, "gceapi")
 
     try:
         CONF.command.func()
