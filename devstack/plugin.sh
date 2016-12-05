@@ -251,6 +251,7 @@ elif [[ "$1" == "stack" && "$2" == "extra" ]]; then
     echo_summary "Initializing gce-api"
     init_gceapi
     start_gceapi
+elif [[ "$1" == "stack" && "$2" == "test-config" ]]; then
     configure_functional_tests
 fi
 
