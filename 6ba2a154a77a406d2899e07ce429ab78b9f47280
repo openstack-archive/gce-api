@@ -1,0 +1,8 @@
+Code-Review+2: Feodor Tersin <ftersin@hotmail.com>
+Workflow+1: Feodor Tersin <ftersin@hotmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 05 Dec 2016 08:19:46 +0000
+Reviewed-on: https://review.openstack.org/406761
+Project: openstack/gce-api
+Branch: refs/heads/stable/newton
