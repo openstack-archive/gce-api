@@ -26,8 +26,8 @@ import testtools
 from tempest.common.utils.linux import remote_client
 from tempest import config
 from tempest import exceptions
+from tempest.lib.common.utils import test_utils
 from tempest import manager
-import tempest.test
 
 CONF = config.CONF
 LOG = logging.getLogger("tempest.thirdparty.gce")
@@ -159,7 +159,7 @@ class GCESmokeTestCase(testtools.TestCase):
 
             try:
                 opLink = body["selfLink"]
-                result = tempest.test.call_until_true(check, timeout, idle)
+                result = test_utils.call_until_true(check, timeout, idle)
                 if not result:
                     msg = ("Timed out waiting for deletion resource %s"
                         % targetLink)
@@ -222,7 +222,7 @@ class GCESmokeTestCase(testtools.TestCase):
 
         timeout = CONF.gceapi.operation_timeout
         idle = CONF.gceapi.operation_interval
-        result = tempest.test.call_until_true(check, timeout, idle)
+        result = test_utils.call_until_true(check, timeout, idle)
         if not result:
             message = "Timed out waiting for uri %s" % targetLink
             raise exceptions.TimeoutException(message)
@@ -276,7 +276,7 @@ class GCESmokeTestCase(testtools.TestCase):
             proc.wait()
             return True if proc.returncode == 0 else False
 
-        result = tempest.test.call_until_true(
+        result = test_utils.call_until_true(
             ping, CONF.compute.ping_timeout, 1)
         if result:
             return
