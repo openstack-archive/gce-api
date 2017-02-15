@@ -277,7 +277,7 @@ class GCESmokeTestCase(testtools.TestCase):
             return True if proc.returncode == 0 else False
 
         result = test_utils.call_until_true(
-            ping, CONF.compute.ping_timeout, 1)
+            ping, CONF.validation.ping_timeout, 1)
         if result:
             return
 
