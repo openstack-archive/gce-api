@@ -1,0 +1,8 @@
+Code-Review+2: Alexey Morlang <alexey.morlang@gmail.com>
+Workflow+1: Alexey Morlang <alexey.morlang@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 02 Mar 2017 12:36:53 +0000
+Reviewed-on: https://review.openstack.org/435897
+Project: openstack/gce-api
+Branch: refs/heads/master
