@@ -109,7 +109,7 @@ class RequestContext(context.RequestContext):
             'project_id': self.project_id,
             'read_deleted': self.read_deleted,
             'remote_address': self.remote_address,
-            'timestamp': timeutils.strtime(self.timestamp),
+            'timestamp': self.timestamp.isoformat(),
             'user_name': self.user_name,
             'project_name': self.project_name,
             'service_catalog': self.service_catalog
