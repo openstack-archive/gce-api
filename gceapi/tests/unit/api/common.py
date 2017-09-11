@@ -21,9 +21,9 @@ from keystoneclient.auth import identity as keystone_identity
 from keystoneclient import client as keystone_client
 from neutronclient.v2_0 import client as neutronclient
 from novaclient import client as novaclient
-from oslo_utils import timeutils
 
 import gceapi.api
+from gceapi.api import utils
 from gceapi.tests.unit.api import fake_cinder_client
 from gceapi.tests.unit.api import fake_db
 from gceapi.tests.unit.api import fake_glance_client
@@ -114,7 +114,7 @@ class GCEControllerTest(test.TestCase):
                 lambda: uuid.UUID("735d48a5-284e-4fb4-a10c-a465ac0b8888"))
         # NOTE(ft): we cannot stub datetime.utcnow,
         # so we stub conversion from datetime to string
-        self.stubs.Set(timeutils, "isotime",
+        self.stubs.Set(utils, "isotime",
                        lambda x, y: "2013-12-27T08:46:34.684354Z")
 
     def request_gce(self, url, method="GET", body=None):

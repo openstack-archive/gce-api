@@ -19,8 +19,8 @@ and sufficient to handle supported GCE API requests
 """
 
 from oslo_config import cfg
-from oslo_utils import timeutils
 
+from gceapi.api import utils
 from gceapi import db
 from gceapi import exception
 
@@ -166,7 +166,7 @@ class API(object):
                 "creationTimestamp" not in db_item):
             # TODO(ft): Google doesn't return microseconds but returns
             # server time zone: 2013-12-06T03:34:31.340-08:00
-            utcnow = timeutils.isotime(None, True)
+            utcnow = utils.isotime(None, True)
             db_item["creationTimestamp"] = utcnow
             item["creationTimestamp"] = utcnow
         db.add_item(context, self._get_type(), db_item)

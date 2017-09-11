@@ -14,10 +14,9 @@
 
 import uuid
 
-from oslo_utils import timeutils
-
 from gceapi.api import base_api
 from gceapi.api import scopes
+from gceapi.api import utils
 from gceapi import exception
 from gceapi.i18n import _
 
@@ -95,7 +94,7 @@ class API(base_api.API):
         operation.update(operation_progress)
         if operation["progress"] == 100:
             operation["status"] = "DONE"
-            operation["end_time"] = timeutils.isotime(None, True)
+            operation["end_time"] = utils.isotime(None, True)
         self._update_db_item(context, operation)
         return operation
 
@@ -105,7 +104,7 @@ class API(base_api.API):
         operation = {
             "id": operation_id,
             "name": "operation-" + operation_id,
-            "insert_time": timeutils.isotime(context.timestamp, True),
+            "insert_time": utils.isotime(context.timestamp, True),
             "user": context.user_name,
             "type": op_type,
             "target_type": target_type,
@@ -124,7 +123,7 @@ class API(base_api.API):
         if method_key is None or "error_code" in operation:
             operation["progress"] = 100
             operation["status"] = "DONE"
-            operation["end_time"] = timeutils.isotime(None, True)
+            operation["end_time"] = utils.isotime(None, True)
         else:
             operation["progress"] = 0
             operation["status"] = "RUNNING"
@@ -144,7 +143,7 @@ class API(base_api.API):
             operation.update(operation_result)
         if operation["progress"] == 100 or "error_code" in operation:
             operation["status"] = "DONE"
-            operation["end_time"] = timeutils.isotime(None, True)
+            operation["end_time"] = utils.isotime(None, True)
         self._update_db_item(context, operation)
 
     def _error_from_exception(self, ex):

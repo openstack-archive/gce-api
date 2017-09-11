@@ -14,9 +14,8 @@
 
 import threading
 
-from oslo_utils import timeutils
-
 from gceapi.api import operation_api
+from gceapi.api import utils
 from gceapi.i18n import _
 
 
@@ -44,7 +43,7 @@ def save_operation(context, action_result):
 def start_operation(context, get_progress_method=None, item_id=None):
     if context.operation is None or context.operation_start_time is not None:
         return
-    context.operation_start_time = timeutils.isotime(None, True)
+    context.operation_start_time = utils.isotime(None, True)
     context.operation_get_progress_method = get_progress_method
     context.operation_item_id = item_id
 
