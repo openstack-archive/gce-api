@@ -30,7 +30,7 @@ FLAGS = cfg.CONF
 class Singleton(type):
     """Singleton metaclass.
 
-    KIND must be overriden in classes based on this type.
+    KIND must be overridden in classes based on this type.
     """
     _instances = {}
     KIND = ""
@@ -53,7 +53,7 @@ class Singleton(type):
 class NetSingleton(Singleton):
     """Proxy loader for net depended API.
 
-    NEUTRON_API_MODULE and NOVA_API_MODULE must be overriden in classes
+    NEUTRON_API_MODULE and NOVA_API_MODULE must be overridden in classes
     based on this type.
     """
 
@@ -97,14 +97,14 @@ class API(object):
         self._callbacks = []
 
     def _get_type(self):
-        """GCE API object type method. Should be overriden."""
+        """GCE API object type method. Should be overridden."""
 
         raise NotImplementedError
 
     def _get_persistent_attributes(self):
         """Iterable of name of columns stored in GCE API database.
 
-        Should be overriden.
+        Should be overridden.
         """
 
         raise NotImplementedError

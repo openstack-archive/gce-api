@@ -75,7 +75,7 @@ class Controller(object):
             return None, 204
         return self._format_output(request, action, action_result), 200
 
-    # Base methods, should be overriden
+    # Base methods, should be overridden
 
     def format_item(self, request, image, scope):
         """Main item resource conversion routine
