@@ -21,6 +21,7 @@ from webob import exc
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import timeutils
+import six
 
 from gceapi.api import clients
 from gceapi.api import operation_api
@@ -249,7 +250,7 @@ class Controller(object):
         """Returns standard format for given date."""
         if date_string is None:
             return None
-        if isinstance(date_string, basestring):
+        if isinstance(date_string, six.string_types):
             date_string = timeutils.parse_isotime(date_string)
         return date_string.strftime('%Y-%m-%dT%H:%M:%SZ')
 

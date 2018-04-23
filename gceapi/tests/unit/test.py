@@ -32,6 +32,7 @@ import fixtures
 import mox
 from oslo_config import cfg
 from oslo_log import log as logging
+import six
 import stubout
 import testtools
 
@@ -155,7 +156,7 @@ class TestCase(testtools.TestCase):
             self.assertIn(k, d2)
             v2 = d2[k]
             if(isinstance(v1, collections.Iterable) and
-               not isinstance(v1, basestring)):
+               not isinstance(v1, six.string_types)):
                 self.assertItemsEqual(v1, v2, msg)
             else:
                 self.assertEqual(v1, v2, msg)
