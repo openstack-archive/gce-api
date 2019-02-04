@@ -1,0 +1,8 @@
+Code-Review+2: Andrey Pavlov <andrey.mp@gmail.com>
+Workflow+1: Andrey Pavlov <andrey.mp@gmail.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Mon, 04 Feb 2019 08:48:45 +0000
+Reviewed-on: https://review.openstack.org/634637
+Project: openstack/gce-api
+Branch: refs/heads/master
