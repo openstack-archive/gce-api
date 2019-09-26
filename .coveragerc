@@ -1,8 +1,0 @@
-[run]
-branch = True
-source = gceapi
-omit = gceapi/tests/*
-
-[report]
-ignore_errors = True
-
